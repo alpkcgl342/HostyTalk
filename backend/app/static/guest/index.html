@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0E7C86">
+  <title>HostyTalk</title>
+  <link rel="stylesheet" href="/static/guest/guest.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand"><span class="hosty">Hosty</span><span class="talk">Talk</span></div>
+    <select id="lang" aria-label="Language"></select>
+  </header>
+
+  <main>
+    <section id="welcome" class="card center">
+      <p id="business" class="business"></p>
+      <p data-i18n="welcome"></p>
+      <button id="start" class="primary big" data-i18n="start"></button>
+      <p class="hint" data-i18n="startHint"></p>
+    </section>
+
+    <section id="closed" class="card center hidden">
+      <p id="closedText"></p>
+    </section>
+
+    <section id="price" class="card price hidden"></section>
+    <section id="offers" class="offers"></section>
+    <form id="counterForm" class="card counter hidden">
+      <label for="counterAmount" data-i18n="yourOffer"></label>
+      <div class="row">
+        <input id="counterAmount" inputmode="decimal" autocomplete="off" maxlength="12">
+        <select id="counterCurrency" aria-label="Currency">
+          <option value="EUR">€ EUR</option><option value="USD">$ USD</option>
+          <option value="GBP">£ GBP</option><option value="TRY">₺ TRY</option>
+        </select>
+        <button type="submit" class="primary" data-i18n="sendOffer"></button>
+      </div>
+    </form>
+    <section id="summary" class="card summary hidden"></section>
+
+    <ol id="transcript" class="transcript"></ol>
+  </main>
+
+  <footer id="controls" class="controls hidden">
+    <div id="status" class="status"></div>
+    <button id="mic" class="mic" aria-label="Microphone">🎤</button>
+    <div class="row">
+      <form id="textForm" class="textForm">
+        <input id="textInput" autocomplete="off" maxlength="500">
+        <button type="submit" class="primary" data-i18n="send"></button>
+      </form>
+    </div>
+  </footer>
+
+  <audio id="player" playsinline></audio>
+  <script src="/static/guest/guest.js"></script>
+</body>
+</html>

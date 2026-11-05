@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="ht_primary">#0E7C86</color>
+    <color name="ht_accent">#F2A541</color>
+    <color name="ht_background">#F5F7F8</color>
+    <color name="ic_launcher_background">#0E7C86</color>
+</resources>

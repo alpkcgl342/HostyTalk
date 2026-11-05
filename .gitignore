@@ -1,0 +1,26 @@
+# Gizli ayarlar — asla paylaşılmaz
+.env
+backend/.env
+local.properties
+
+# Python
+backend/.venv/
+backend/*.db
+__pycache__/
+.pytest_cache/
+
+# Android / Gradle
+.gradle/
+.kotlin/
+build/
+*.apk
+*.aab
+captures/
+.externalNativeBuild/
+.cxx/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.DS_Store

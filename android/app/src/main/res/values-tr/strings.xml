@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tagline">Siz konuşun, misafiriniz kendi dilinde duysun.</string>
+
+    <string name="login">Giriş yap</string>
+    <string name="register">Hesap oluştur</string>
+    <string name="email">E-posta</string>
+    <string name="password">Şifre (en az 6 karakter)</string>
+    <string name="business_name">İşletme adı</string>
+    <string name="have_account">Hesabınız var mı? Giriş yapın</string>
+    <string name="no_account">Yeni misiniz? İşletme hesabı oluşturun</string>
+    <string name="server_url">Sunucu adresi</string>
+    <string name="server_url_hint">HostyTalk sunucusunun adresi, ör. http://192.168.1.50:8000</string>
+    <string name="save">Kaydet</string>
+    <string name="cancel">İptal</string>
+    <string name="retry">Tekrar dene</string>
+    <string name="logout">Çıkış yap</string>
+
+    <string name="app_language">Uygulama dili</string>
+    <string name="i_speak">Konuştuğum dil</string>
+    <string name="i_speak_hint">Konuşmalarda kullanacağınız dil:</string>
+    <string name="welcome_fmt">Hoş geldiniz, %1$s</string>
+    <string name="usage_fmt">Bu ay: %1$s / %2$d dk kullanıldı</string>
+    <string name="new_conversation">Yeni konuşma</string>
+    <string name="new_conversation_hint">Ekranda bir QR kod belirir. Misafiriniz telefon kamerasıyla okutur, hiçbir şey indirmesine gerek yok.</string>
+
+    <string name="scan_qr">Misafirinize okutun</string>
+    <string name="qr_hint">Tarayıcıdan kendi dilinde katılacak.</string>
+    <string name="qr_expires_fmt">Kod %1$d:%2$02d daha geçerli</string>
+    <string name="qr_expired">Bu kodun süresi doldu. Yeni bir konuşma başlatın.</string>
+    <string name="guest_waiting">Misafir bekleniyor…</string>
+    <string name="guest_connected_fmt">Misafir bağlandı · %1$s</string>
+    <string name="connection_lost">Bağlantı koptu, yeniden bağlanılıyor…</string>
+    <string name="show_qr">QR</string>
+    <string name="hide_qr">QR\'ı gizle</string>
+    <string name="end_conversation">Bitir</string>
+    <string name="end_title">Konuşma bitirilsin mi?</string>
+    <string name="end_message">İki dilde kısa bir “neyde anlaştık” özeti oluşturabilirsiniz.</string>
+    <string name="end_with_summary">Özetle bitir</string>
+    <string name="end_without_summary">Özetsiz bitir</string>
+    <string name="ending">Bitiriliyor…</string>
+    <string name="conversation_ended">Konuşma sona erdi.</string>
+    <string name="back_home">Ana sayfaya dön</string>
+    <string name="summary_title">Neyde anlaştık</string>
+
+    <string name="you">Siz</string>
+    <string name="guest">Misafir</string>
+    <string name="price">Fiyat</string>
+    <string name="price_hint">Tutar</string>
+    <string name="show_price">Göster</string>
+
+    <string name="mic_on">Dinliyorum… konuşabilirsiniz.</string>
+    <string name="mic_off">Mikrofona dokunun ve konuşun.</string>
+    <string name="no_speech">Bir şey duyamadım. Tekrar denemek için dokunun.</string>
+    <string name="hearing">Sizi duyuyorum…</string>
+    <string name="translating">Çevriliyor…</string>
+    <string name="playing">Çeviri seslendiriliyor…</string>
+
+    <string name="err_network">Sunucuya ulaşılamıyor. Bağlantınızı ve sunucu adresini kontrol edin.</string>
+    <string name="err_invalid_credentials">E-posta ya da şifre hatalı.</string>
+    <string name="err_email_taken">Bu e-posta ile kayıtlı bir hesap zaten var.</string>
+    <string name="err_quota">Bu ayki dakika kotanız doldu.</string>
+    <string name="err_ai">Çeviri yapılamadı, lütfen tekrar deneyin.</string>
+    <string name="err_session">Oturumunuzun süresi doldu, lütfen tekrar giriş yapın.</string>
+    <string name="err_validation">Lütfen girdiğiniz bilgileri kontrol edin.</string>
+    <string name="err_generic">Bir sorun oluştu.</string>
+
+    <!-- Hazır cümleler, geçmiş, pazarlık -->
+    <string name="business_type">İşletme türü</string>
+    <string name="bt_hotel">Otel</string>
+    <string name="bt_restaurant">Restoran / kafe</string>
+    <string name="bt_shop">Mağaza / çarşı</string>
+    <string name="bt_taxi">Taksi</string>
+    <string name="bt_guide">Tur rehberi</string>
+    <string name="bt_car_rental">Araç kiralama</string>
+    <string name="bt_other">Diğer</string>
+    <string name="my_phrases">Hazır cümlelerim</string>
+    <string name="phrases_hint">Eklediğiniz cümleler konuşmada en başta çıkar. Tek dokunuşla misafirin diline çevrilip seslendirilir.</string>
+    <string name="new_phrase">Yeni cümle</string>
+    <string name="add">Ekle</string>
+    <string name="my_custom_phrases">Benim cümlelerim</string>
+    <string name="no_custom_phrases">Henüz cümle eklemediniz.</string>
+    <string name="default_phrases_fmt">%1$s için hazır</string>
+    <string name="delete">Sil</string>
+    <string name="history">Geçmiş konuşmalar</string>
+    <string name="history_empty">Henüz konuşma yok.</string>
+    <string name="messages_count_fmt">%1$d mesaj</string>
+    <string name="conversation_detail">Konuşma</string>
+    <string name="create_summary">Özet oluştur</string>
+    <string name="summarizing">Özet oluşturuluyor…</string>
+    <string name="share">Paylaş</string>
+    <string name="share_summary">Özeti paylaş</string>
+    <string name="bargaining">Pazarlık</string>
+    <string name="transcript">Konuşma dökümü</string>
+    <string name="delete_conversation_title">Konuşma silinsin mi?</string>
+    <string name="delete_conversation_message">Döküm ve misafirin özet bağlantısı kalıcı olarak silinir.</string>
+    <string name="price_and_offer">Fiyat / teklif</string>
+    <string name="make_offer">Teklif ver</string>
+    <string name="offer_mine">Sizin teklifiniz</string>
+    <string name="offer_guest">Misafirin teklifi</string>
+    <string name="offer_waiting">Misafirin yanıtı bekleniyor…</string>
+    <string name="offer_accepted">Anlaşıldı ✓</string>
+    <string name="offer_rejected">Reddedildi</string>
+    <string name="offer_countered">Karşı teklif verildi</string>
+    <string name="accept">Kabul et</string>
+    <string name="reject">Reddet</string>
+    <string name="counter_hint">Karşı teklif için Fiyat / teklif\'ten yeni teklif verin.</string>
+</resources>

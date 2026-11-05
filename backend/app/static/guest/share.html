@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0E7C86">
+  <meta name="robots" content="noindex">
+  <title>HostyTalk</title>
+  <link rel="stylesheet" href="/static/guest/guest.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand"><span class="hosty">Hosty</span><span class="talk">Talk</span></div>
+    <select id="lang" aria-label="Language"></select>
+  </header>
+
+  <main class="share">
+    <section class="card">
+      <p id="business" class="business"></p>
+      <p id="date" class="hint"></p>
+    </section>
+
+    <section id="notFound" class="card center hidden"><p data-i18n="notFound"></p></section>
+
+    <section id="deal" class="card price hidden"></section>
+    <section id="summary" class="card summary hidden"></section>
+
+    <h3 id="transcriptTitle" class="sectionTitle" data-i18n="transcript"></h3>
+    <ol id="transcript" class="transcript"></ol>
+
+    <div class="actions noprint">
+      <button id="shareBtn" class="primary" data-i18n="share"></button>
+      <button id="printBtn" data-i18n="save"></button>
+    </div>
+  </main>
+
+  <script src="/static/guest/share.js"></script>
+</body>
+</html>

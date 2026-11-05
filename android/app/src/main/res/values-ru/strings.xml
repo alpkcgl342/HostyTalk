@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tagline">Вы говорите — гость слышит вас на своём языке.</string>
+
+    <string name="login">Войти</string>
+    <string name="register">Создать аккаунт</string>
+    <string name="email">Эл. почта</string>
+    <string name="password">Пароль (не менее 6 символов)</string>
+    <string name="business_name">Название заведения</string>
+    <string name="have_account">Уже есть аккаунт? Войдите</string>
+    <string name="no_account">Впервые здесь? Создайте бизнес-аккаунт</string>
+    <string name="server_url">Адрес сервера</string>
+    <string name="server_url_hint">Адрес сервера HostyTalk, напр. http://192.168.1.50:8000</string>
+    <string name="save">Сохранить</string>
+    <string name="cancel">Отмена</string>
+    <string name="retry">Повторить</string>
+    <string name="logout">Выйти</string>
+
+    <string name="app_language">Язык приложения</string>
+    <string name="i_speak">Я говорю на</string>
+    <string name="i_speak_hint">Язык, на котором вы будете говорить в разговорах:</string>
+    <string name="welcome_fmt">Добро пожаловать, %1$s</string>
+    <string name="usage_fmt">В этом месяце: %1$s / %2$d мин использовано</string>
+    <string name="new_conversation">Новый разговор</string>
+    <string name="new_conversation_hint">Появится QR-код. Гость сканирует его камерой телефона — ничего скачивать не нужно.</string>
+
+    <string name="scan_qr">Попросите гостя отсканировать</string>
+    <string name="qr_hint">Он подключится из браузера на своём языке.</string>
+    <string name="qr_expires_fmt">Код действует ещё %1$d:%2$02d</string>
+    <string name="qr_expired">Срок действия кода истёк. Начните новый разговор.</string>
+    <string name="guest_waiting">Ожидание гостя…</string>
+    <string name="guest_connected_fmt">Гость подключён · %1$s</string>
+    <string name="connection_lost">Связь потеряна, переподключение…</string>
+    <string name="show_qr">QR</string>
+    <string name="hide_qr">Скрыть QR</string>
+    <string name="end_conversation">Завершить</string>
+    <string name="end_title">Завершить разговор?</string>
+    <string name="end_message">Можно создать краткое резюме «о чём договорились» на обоих языках.</string>
+    <string name="end_with_summary">Завершить с резюме</string>
+    <string name="end_without_summary">Завершить без резюме</string>
+    <string name="ending">Завершение…</string>
+    <string name="conversation_ended">Разговор завершён.</string>
+    <string name="back_home">На главную</string>
+    <string name="summary_title">О чём мы договорились</string>
+
+    <string name="you">Вы</string>
+    <string name="guest">Гость</string>
+    <string name="price">Цена</string>
+    <string name="price_hint">Сумма</string>
+    <string name="show_price">Показать</string>
+
+    <string name="mic_on">Слушаю… говорите.</string>
+    <string name="mic_off">Нажмите на микрофон и говорите.</string>
+    <string name="no_speech">Ничего не слышно. Нажмите, чтобы попробовать снова.</string>
+    <string name="hearing">Слышу вас…</string>
+    <string name="translating">Перевожу…</string>
+    <string name="playing">Воспроизвожу перевод…</string>
+
+    <string name="err_network">Сервер недоступен. Проверьте подключение и адрес сервера.</string>
+    <string name="err_invalid_credentials">Неверная эл. почта или пароль.</string>
+    <string name="err_email_taken">Аккаунт с этой эл. почтой уже существует.</string>
+    <string name="err_quota">Минуты на этот месяц закончились.</string>
+    <string name="err_ai">Не удалось перевести, попробуйте ещё раз.</string>
+    <string name="err_session">Сессия истекла, войдите снова.</string>
+    <string name="err_validation">Проверьте введённые данные.</string>
+    <string name="err_generic">Что-то пошло не так.</string>
+
+    <!-- Hazır cümleler, geçmiş, pazarlık -->
+    <string name="business_type">Тип заведения</string>
+    <string name="bt_hotel">Отель</string>
+    <string name="bt_restaurant">Ресторан / кафе</string>
+    <string name="bt_shop">Магазин / базар</string>
+    <string name="bt_taxi">Такси</string>
+    <string name="bt_guide">Гид</string>
+    <string name="bt_car_rental">Прокат автомобилей</string>
+    <string name="bt_other">Другое</string>
+    <string name="my_phrases">Мои фразы</string>
+    <string name="phrases_hint">Добавленные вами фразы показываются первыми. Одно касание — и фраза переведена и озвучена гостю.</string>
+    <string name="new_phrase">Новая фраза</string>
+    <string name="add">Добавить</string>
+    <string name="my_custom_phrases">Мои фразы</string>
+    <string name="no_custom_phrases">Вы ещё не добавили фраз.</string>
+    <string name="default_phrases_fmt">Готовые для: %1$s</string>
+    <string name="delete">Удалить</string>
+    <string name="history">Прошлые разговоры</string>
+    <string name="history_empty">Разговоров пока нет.</string>
+    <string name="messages_count_fmt">Сообщений: %1$d</string>
+    <string name="conversation_detail">Разговор</string>
+    <string name="create_summary">Создать резюме</string>
+    <string name="summarizing">Создаю резюме…</string>
+    <string name="share">Поделиться</string>
+    <string name="share_summary">Поделиться резюме</string>
+    <string name="bargaining">Торг</string>
+    <string name="transcript">Расшифровка разговора</string>
+    <string name="delete_conversation_title">Удалить разговор?</string>
+    <string name="delete_conversation_message">Расшифровка и ссылка на резюме для гостя будут удалены навсегда.</string>
+    <string name="price_and_offer">Цена / предложение</string>
+    <string name="make_offer">Предложить цену</string>
+    <string name="offer_mine">Ваше предложение</string>
+    <string name="offer_guest">Предложение гостя</string>
+    <string name="offer_waiting">Ждём ответа гостя…</string>
+    <string name="offer_accepted">Договорились ✓</string>
+    <string name="offer_rejected">Отклонено</string>
+    <string name="offer_countered">Сделано встречное</string>
+    <string name="accept">Принять</string>
+    <string name="reject">Отклонить</string>
+    <string name="counter_hint">Чтобы предложить встречную цену, сделайте новое предложение в «Цена / предложение».</string>
+</resources>

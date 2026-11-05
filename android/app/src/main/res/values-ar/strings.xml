@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tagline">تحدّث أنت، ويسمعك ضيفك بلغته.</string>
+
+    <string name="login">تسجيل الدخول</string>
+    <string name="register">إنشاء حساب</string>
+    <string name="email">البريد الإلكتروني</string>
+    <string name="password">كلمة المرور (6 أحرف على الأقل)</string>
+    <string name="business_name">اسم النشاط التجاري</string>
+    <string name="have_account">لديك حساب؟ سجّل الدخول</string>
+    <string name="no_account">جديد هنا؟ أنشئ حساباً تجارياً</string>
+    <string name="server_url">عنوان الخادم</string>
+    <string name="server_url_hint">عنوان خادم HostyTalk، مثل http://192.168.1.50:8000</string>
+    <string name="save">حفظ</string>
+    <string name="cancel">إلغاء</string>
+    <string name="retry">أعد المحاولة</string>
+    <string name="logout">تسجيل الخروج</string>
+
+    <string name="app_language">لغة التطبيق</string>
+    <string name="i_speak">أتحدث</string>
+    <string name="i_speak_hint">اللغة التي ستتحدث بها أثناء المحادثات:</string>
+    <string name="welcome_fmt">أهلاً بك، %1$s</string>
+    <string name="usage_fmt">هذا الشهر: استُخدمت %1$s من %2$d دقيقة</string>
+    <string name="new_conversation">محادثة جديدة</string>
+    <string name="new_conversation_hint">سيظهر رمز QR. يمسحه ضيفك بكاميرا هاتفه دون الحاجة إلى تنزيل أي شيء.</string>
+
+    <string name="scan_qr">اطلب من ضيفك مسح الرمز</string>
+    <string name="qr_hint">سينضم من المتصفح بلغته.</string>
+    <string name="qr_expires_fmt">الرمز صالح لمدة %1$d:%2$02d</string>
+    <string name="qr_expired">انتهت صلاحية هذا الرمز. ابدأ محادثة جديدة.</string>
+    <string name="guest_waiting">في انتظار الضيف…</string>
+    <string name="guest_connected_fmt">الضيف متصل · %1$s</string>
+    <string name="connection_lost">انقطع الاتصال، جارٍ إعادة الاتصال…</string>
+    <string name="show_qr">QR</string>
+    <string name="hide_qr">إخفاء QR</string>
+    <string name="end_conversation">إنهاء</string>
+    <string name="end_title">إنهاء المحادثة؟</string>
+    <string name="end_message">يمكنك إنشاء ملخص قصير «ما اتفقنا عليه» باللغتين.</string>
+    <string name="end_with_summary">إنهاء مع ملخص</string>
+    <string name="end_without_summary">إنهاء بدون ملخص</string>
+    <string name="ending">جارٍ الإنهاء…</string>
+    <string name="conversation_ended">انتهت المحادثة.</string>
+    <string name="back_home">العودة إلى الرئيسية</string>
+    <string name="summary_title">ما اتفقنا عليه</string>
+
+    <string name="you">أنت</string>
+    <string name="guest">الضيف</string>
+    <string name="price">السعر</string>
+    <string name="price_hint">المبلغ</string>
+    <string name="show_price">عرض</string>
+
+    <string name="mic_on">أستمع… تحدّث الآن.</string>
+    <string name="mic_off">اضغط على الميكروفون وتحدّث.</string>
+    <string name="no_speech">لم أسمع شيئاً. اضغط للمحاولة مرة أخرى.</string>
+    <string name="hearing">أسمعك…</string>
+    <string name="translating">جارٍ الترجمة…</string>
+    <string name="playing">تشغيل الترجمة…</string>
+
+    <string name="err_network">تعذّر الوصول إلى الخادم. تحقق من الاتصال وعنوان الخادم.</string>
+    <string name="err_invalid_credentials">البريد الإلكتروني أو كلمة المرور غير صحيحة.</string>
+    <string name="err_email_taken">يوجد حساب مسجّل بهذا البريد الإلكتروني.</string>
+    <string name="err_quota">نفدت دقائقك لهذا الشهر.</string>
+    <string name="err_ai">تعذّرت الترجمة، يرجى المحاولة مرة أخرى.</string>
+    <string name="err_session">انتهت جلستك، يرجى تسجيل الدخول مرة أخرى.</string>
+    <string name="err_validation">يرجى التحقق من المعلومات المدخلة.</string>
+    <string name="err_generic">حدث خطأ ما.</string>
+
+    <!-- Hazır cümleler, geçmiş, pazarlık -->
+    <string name="business_type">نوع النشاط</string>
+    <string name="bt_hotel">فندق</string>
+    <string name="bt_restaurant">مطعم / مقهى</string>
+    <string name="bt_shop">متجر / سوق</string>
+    <string name="bt_taxi">سيارة أجرة</string>
+    <string name="bt_guide">مرشد سياحي</string>
+    <string name="bt_car_rental">تأجير سيارات</string>
+    <string name="bt_other">أخرى</string>
+    <string name="my_phrases">عباراتي</string>
+    <string name="phrases_hint">تظهر العبارات التي تضيفها أولاً في المحادثة. بلمسة واحدة تُترجم وتُنطق لضيفك.</string>
+    <string name="new_phrase">عبارة جديدة</string>
+    <string name="add">إضافة</string>
+    <string name="my_custom_phrases">عباراتي الخاصة</string>
+    <string name="no_custom_phrases">لم تضف أي عبارات بعد.</string>
+    <string name="default_phrases_fmt">جاهزة لـ %1$s</string>
+    <string name="delete">حذف</string>
+    <string name="history">المحادثات السابقة</string>
+    <string name="history_empty">لا توجد محادثات بعد.</string>
+    <string name="messages_count_fmt">%1$d رسالة</string>
+    <string name="conversation_detail">المحادثة</string>
+    <string name="create_summary">إنشاء ملخص</string>
+    <string name="summarizing">جارٍ إنشاء الملخص…</string>
+    <string name="share">مشاركة</string>
+    <string name="share_summary">مشاركة الملخص</string>
+    <string name="bargaining">المساومة</string>
+    <string name="transcript">نص المحادثة</string>
+    <string name="delete_conversation_title">حذف المحادثة؟</string>
+    <string name="delete_conversation_message">سيتم حذف النص ورابط ملخص الضيف نهائياً.</string>
+    <string name="price_and_offer">السعر / العرض</string>
+    <string name="make_offer">تقديم عرض</string>
+    <string name="offer_mine">عرضك</string>
+    <string name="offer_guest">عرض الضيف</string>
+    <string name="offer_waiting">في انتظار رد الضيف…</string>
+    <string name="offer_accepted">تم الاتفاق ✓</string>
+    <string name="offer_rejected">مرفوض</string>
+    <string name="offer_countered">تم تقديم عرض مضاد</string>
+    <string name="accept">قبول</string>
+    <string name="reject">رفض</string>
+    <string name="counter_hint">لتقديم عرض مضاد، قدّم عرضاً جديداً من السعر / العرض.</string>
+</resources>
