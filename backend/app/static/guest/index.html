@@ -34,8 +34,21 @@
       <p id="signedInAs" class="hint"></p>
       <button id="start" class="primary big" data-i18n="start"></button>
       <p class="hint" data-i18n="startHint"></p>
+      <button type="button" id="changePw" class="link" data-i18n="changePassword"></button>
       <button type="button" id="logout" class="link" data-i18n="logout"></button>
     </section>
+
+    <!-- Giriş yapılıyken şifre değiştirme (eski şifre sorulmaz) -->
+    <form id="pwForm" class="card authForm hidden">
+      <h3 data-i18n="changePassword"></h3>
+      <p class="hint" data-i18n="pwHint"></p>
+      <input id="newPw" type="password" autocomplete="new-password" minlength="6" required>
+      <input id="newPw2" type="password" autocomplete="new-password" minlength="6" required>
+      <p id="pwError" class="error hidden"></p>
+      <p id="pwDone" class="hidden" data-i18n="pwChanged"></p>
+      <button type="submit" id="pwSave" class="primary big" data-i18n="save"></button>
+      <button type="button" id="pwCancel" class="link" data-i18n="back"></button>
+    </form>
 
     <section id="closed" class="card center hidden">
       <p id="closedText"></p>

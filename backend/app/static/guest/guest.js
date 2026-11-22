@@ -83,8 +83,28 @@
       errCredentials: "Неверная эл. почта или пароль.", errTaken: "Аккаунт с этой эл. почтой уже существует." },
   };
 
+  // Şifre değiştirme metinleri
+  const T_PW = {
+    en: { changePassword: "Change password", pwHint: "You stay signed in here; other devices (e.g. the app) will be signed out.",
+      newPassword: "New password (min. 6 characters)", repeatPassword: "Repeat new password",
+      pwMismatch: "Passwords don't match.", pwChanged: "Your password has been changed.", save: "Save", back: "Back" },
+    tr: { changePassword: "Şifre değiştir", pwHint: "Burada oturumunuz açık kalır; diğer cihazlardaki (ör. uygulama) oturumlar kapanır.",
+      newPassword: "Yeni şifre (en az 6 karakter)", repeatPassword: "Yeni şifreyi tekrar girin",
+      pwMismatch: "Şifreler aynı değil.", pwChanged: "Şifreniz değiştirildi.", save: "Kaydet", back: "Geri" },
+    ar: { changePassword: "تغيير كلمة المرور", pwHint: "ستبقى مسجّلاً هنا، وسيتم تسجيل خروجك من الأجهزة الأخرى (مثل التطبيق).",
+      newPassword: "كلمة المرور الجديدة (6 أحرف على الأقل)", repeatPassword: "أعد إدخال كلمة المرور الجديدة",
+      pwMismatch: "كلمتا المرور غير متطابقتين.", pwChanged: "تم تغيير كلمة المرور.", save: "حفظ", back: "رجوع" },
+    fr: { changePassword: "Changer le mot de passe", pwHint: "Vous restez connecté ici ; les autres appareils (ex. l'application) seront déconnectés.",
+      newPassword: "Nouveau mot de passe (6 caractères min.)", repeatPassword: "Répétez le nouveau mot de passe",
+      pwMismatch: "Les mots de passe ne correspondent pas.", pwChanged: "Votre mot de passe a été modifié.", save: "Enregistrer", back: "Retour" },
+    ru: { changePassword: "Сменить пароль", pwHint: "Здесь вы останетесь в аккаунте, на других устройствах (например, в приложении) — выйдете.",
+      newPassword: "Новый пароль (не менее 6 символов)", repeatPassword: "Повторите новый пароль",
+      pwMismatch: "Пароли не совпадают.", pwChanged: "Пароль изменён.", save: "Сохранить", back: "Назад" },
+  };
+  for (const [l, strings] of Object.entries(T_PW)) Object.assign(T[l], strings);
+
   const $ = (id) => document.getElementById(id);
-  const code = (location.pathname.split("/").filter(Boolean).pop() || "").toUpperCase();
+  const code =(location.pathname.split("/").filter(Boolean).pop() || "").toUpperCase();
 
   let lang = detectLang();
   let token = safeGet("hostytalk.token");
@@ -120,6 +140,8 @@
     $("email").placeholder = t("email");
     $("password").placeholder = t("password");
     $("displayName").placeholder = t("name");
+    $("newPw").placeholder = t("newPassword");
+    $("newPw2").placeholder = t("repeatPassword");
     $("lang").value = lang;
     renderAuth();
     if (invite) $("inviteText").textContent = t("invite", { name: invite.host_name });
@@ -188,6 +210,41 @@
     } catch (ex) {
       err.textContent = ex.message === "invalid_credentials" ? t("errCredentials")
         : ex.message === "email_taken" ? t("errTaken") : t("error");
+      err.classList.remove("hidden");
+    }
+  }
+
+  function showPasswordForm(open) {
+    $("welcome").classList.toggle("hidden", open);
+    $("pwForm").classList.toggle("hidden", !open);
+    $("pwError").classList.add("hidden");
+    $("pwDone").classList.add("hidden");
+    $("pwSave").classList.remove("hidden");
+    $("newPw").value = "";
+    $("newPw2").value = "";
+  }
+
+  async function submitPassword(e) {
+    e.preventDefault();
+    const err = $("pwError");
+    err.classList.add("hidden");
+    const pw = $("newPw").value;
+    if (pw !== $("newPw2").value) {
+      err.textContent = t("pwMismatch");
+      return err.classList.remove("hidden");
+    }
+    try {
+      // Sunucu diğer oturumları kapatır ve bu sayfa için yeni token verir.
+      const r = await api("/api/me/password", { method: "POST", body: JSON.stringify({ new_password: pw }) });
+      token = r.token;
+      safeSet("hostytalk.token", token);
+      $("newPw").value = "";
+      $("newPw2").value = "";
+      $("pwSave").classList.add("hidden");
+      $("pwDone").classList.remove("hidden");
+    } catch (ex) {
+      if (ex.status === 401) return logout();
+      err.textContent = t("error");
       err.classList.remove("hidden");
     }
   }
@@ -288,7 +345,7 @@
   }
 
   function showClosed(text, keepTranscript = false) {
-    for (const id of ["invite", "authForm", "welcome", "controls"]) $(id).classList.add("hidden");
+    for (const id of ["invite", "authForm", "welcome", "pwForm", "controls"]) $(id).classList.add("hidden");
     $("closedText").textContent = text;
     $("closed").classList.remove("hidden");
     if (!keepTranscript) $("transcript").replaceChildren();
@@ -505,6 +562,9 @@
     $("authForm").addEventListener("submit", submitAuth);
     $("authToggle").addEventListener("click", () => { registerMode = !registerMode; renderAuth(); });
     $("logout").addEventListener("click", logout);
+    $("changePw").addEventListener("click", () => showPasswordForm(true));
+    $("pwCancel").addEventListener("click", () => showPasswordForm(false));
+    $("pwForm").addEventListener("submit", submitPassword);
 
     $("start").addEventListener("click", () => {
       // iOS: ses çalma ve ses motoru kullanıcı dokunuşuyla açılmalı.
