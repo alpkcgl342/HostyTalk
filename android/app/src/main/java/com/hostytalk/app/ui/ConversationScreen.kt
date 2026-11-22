@@ -5,7 +5,7 @@ import android.content.pm.PackageManager
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,19 +21,17 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -42,7 +40,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -53,14 +50,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
@@ -69,14 +66,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.hostytalk.app.R
 import com.hostytalk.app.data.Connection
 import com.hostytalk.app.data.Languages
-import com.hostytalk.app.data.NewSession
-import com.hostytalk.app.data.Offer
+import com.hostytalk.app.data.LiveSession
 import kotlinx.coroutines.delay
-import java.text.NumberFormat
-import java.util.Currency
 
 @Composable
-fun ConversationScreen(session: NewSession, onClose: () -> Unit) {
+fun ConversationScreen(session: LiveSession, onClose: () -> Unit) {
     val vm: ConversationViewModel = viewModel(key = session.id)
     LaunchedEffect(session.id) { vm.start(session) }
 
@@ -85,7 +79,7 @@ fun ConversationScreen(session: NewSession, onClose: () -> Unit) {
     val hearing by vm.hearing.collectAsStateWithLifecycle()
     val level by vm.level.collectAsStateWithLifecycle()
     val playing by vm.playing.collectAsStateWithLifecycle()
-    var showQr by rememberSaveable { mutableStateOf(true) }
+    var showCode by rememberSaveable { mutableStateOf(session.isHost) }
     var confirmEnd by rememberSaveable { mutableStateOf(false) }
 
     // Konuşma boyunca ekran kapanmasın.
@@ -95,8 +89,8 @@ fun ConversationScreen(session: NewSession, onClose: () -> Unit) {
         onDispose { view.keepScreenOn = false }
     }
 
-    // Misafir bağlanınca QR küçülsün, kopunca geri gelsin.
-    LaunchedEffect(state.guestConnected) { showQr = !state.guestConnected }
+    // Karşı taraf bağlanınca kod kartı küçülsün, kopunca (başlatan için) geri gelsin.
+    LaunchedEffect(state.otherConnected) { showCode = state.isHost && !state.otherConnected }
 
     val context = LocalContext.current
     val micPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
@@ -112,7 +106,9 @@ fun ConversationScreen(session: NewSession, onClose: () -> Unit) {
     BackHandler(enabled = !state.ended) { confirmEnd = true }
 
     Scaffold(
-        topBar = { TopBar(state, showQr, onToggleQr = { showQr = !showQr }, onEnd = { confirmEnd = true }) },
+        topBar = {
+            TopBar(state, showCode, onToggleCode = { showCode = !showCode }, onEnd = { confirmEnd = true })
+        },
         bottomBar = {
             if (!state.ended) Controls(
                 state = state,
@@ -121,14 +117,12 @@ fun ConversationScreen(session: NewSession, onClose: () -> Unit) {
                 level = level,
                 playing = playing,
                 onMic = ::tapMic,
-                onPhrase = vm::sayPhrase,
-                onPrice = vm::showPrice,
-                onOffer = vm::makeOffer,
+                onSend = vm::sendText,
             )
         },
     ) { padding ->
         val listState = rememberLazyListState()
-        LaunchedEffect(state.messages.size, state.summary, state.offers) {
+        LaunchedEffect(state.messages.size, state.summary) {
             val count = listState.layoutInfo.totalItemsCount
             if (count > 0) listState.animateScrollToItem(count - 1)
         }
@@ -138,7 +132,7 @@ fun ConversationScreen(session: NewSession, onClose: () -> Unit) {
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            if (showQr && !state.ended) item { QrCard(state) }
+            if (showCode && state.isHost && !state.ended) item { JoinCodeCard(state) }
             state.error?.let { code ->
                 item {
                     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)) {
@@ -149,24 +143,20 @@ fun ConversationScreen(session: NewSession, onClose: () -> Unit) {
                     }
                 }
             }
-            state.price?.let { item { PriceCard(it) } }
-            items(state.messages, key = { it.id }) { Bubble(it) }
-            // Pazarlık kartları: turistin açık teklifi kabul/ret düğmeleriyle gelir.
-            items(state.offers, key = { "offer${it.id}" }) { o ->
-                OfferCard(o, mine = o.by == "merchant", onReply = if (state.ended) null else { id, ok -> vm.replyOffer(id, ok) })
-            }
-            state.summary?.let { item { SummaryCard(it, state.merchantLang) } }
+            items(state.messages, key = { it.id }) { Bubble(it, state.otherName) }
+            state.summary?.let { item { SummaryCard(it, state.myLang) } }
             if (state.ended) {
                 item {
-                    val context = LocalContext.current
-                    val businessName = stringResource(R.string.app_name)
+                    val title = stringResource(R.string.summary_share_title, state.otherName)
                     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(stringResource(R.string.conversation_ended), style = MaterialTheme.typography.titleMedium)
-                        if (state.shareUrl != null) {
+                        Text(
+                            stringResource(if (state.endedByOther) R.string.ended_by_other else R.string.conversation_ended),
+                            style = MaterialTheme.typography.titleMedium,
+                            textAlign = TextAlign.Center,
+                        )
+                        if (state.summary != null) {
                             OutlinedButton(
-                                onClick = {
-                                    shareSummary(context, businessName, state.summary, state.merchantLang, state.shareUrl)
-                                },
+                                onClick = { shareSummary(context, title, state.summary, state.myLang) },
                                 modifier = Modifier.padding(top = 12.dp),
                             ) { Text(stringResource(R.string.share_summary)) }
                         }
@@ -199,28 +189,34 @@ fun ConversationScreen(session: NewSession, onClose: () -> Unit) {
 }
 
 @Composable
-private fun TopBar(state: ConversationState, showQr: Boolean, onToggleQr: () -> Unit, onEnd: () -> Unit) {
+private fun TopBar(state: ConversationState, showCode: Boolean, onToggleCode: () -> Unit, onEnd: () -> Unit) {
     Surface(color = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary) {
         Row(
             Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(Modifier.weight(1f)) {
-                val guest = Languages.of(state.guestLang)
+                val other = Languages.of(state.otherLang)
                 Text(
                     text = when {
                         state.connection == Connection.Reconnecting -> stringResource(R.string.connection_lost)
-                        state.guestConnected -> stringResource(R.string.guest_connected_fmt, "${guest.flag} ${guest.nativeName}")
-                        else -> stringResource(R.string.guest_waiting)
+                        state.otherConnected -> stringResource(R.string.other_connected_fmt, state.otherName)
+                        state.otherName.isNotEmpty() -> stringResource(R.string.other_away_fmt, state.otherName)
+                        else -> stringResource(R.string.waiting_other)
                     },
                     fontWeight = FontWeight.SemiBold,
                 )
-                val me = Languages.of(state.merchantLang)
-                Text("${me.flag} ${me.nativeName} ⇄ ${guest.flag} ${guest.nativeName}", style = MaterialTheme.typography.bodySmall)
+                val me = Languages.of(state.myLang)
+                Text("${me.flag} ${me.nativeName} ⇄ ${other.flag} ${other.nativeName}", style = MaterialTheme.typography.bodySmall)
             }
             if (!state.ended) {
-                TextButton(onClick = onToggleQr) {
-                    Text(stringResource(if (showQr) R.string.hide_qr else R.string.show_qr), color = MaterialTheme.colorScheme.onPrimary)
+                if (state.isHost) {
+                    TextButton(onClick = onToggleCode) {
+                        Text(
+                            stringResource(if (showCode) R.string.hide_code else R.string.show_code),
+                            color = MaterialTheme.colorScheme.onPrimary,
+                        )
+                    }
                 }
                 OutlinedButton(onClick = onEnd, enabled = !state.ending) {
                     Text(stringResource(R.string.end_conversation), color = MaterialTheme.colorScheme.onPrimary)
@@ -230,8 +226,9 @@ private fun TopBar(state: ConversationState, showQr: Boolean, onToggleQr: () -> 
     }
 }
 
+/** Başlatan kişinin ekranı: karşı taraf bu kodu uygulamaya girer ya da QR'ı okutur. */
 @Composable
-private fun QrCard(state: ConversationState) {
+private fun JoinCodeCard(state: ConversationState) {
     val remaining by produceState(initialValue = 0L, state.joinExpiresAt) {
         while (true) {
             value = (state.joinExpiresAt - System.currentTimeMillis() / 1000).coerceAtLeast(0)
@@ -244,9 +241,18 @@ private fun QrCard(state: ConversationState) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Text(stringResource(R.string.scan_qr), style = MaterialTheme.typography.titleMedium)
-            if (state.joinUrl.isNotEmpty()) QrCode(state.joinUrl, Modifier.size(240.dp))
-            Text(stringResource(R.string.qr_hint), style = MaterialTheme.typography.bodySmall)
+            Text(stringResource(R.string.join_code_title), style = MaterialTheme.typography.titleMedium)
+            Text(
+                state.code.chunked(3).joinToString(" "),
+                fontSize = 40.sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = FontFamily.Monospace,
+                letterSpacing = 4.sp,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Text(stringResource(R.string.join_code_hint), style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center)
+            if (state.joinUrl.isNotEmpty()) QrCode(state.joinUrl, Modifier.size(200.dp))
+            Text(stringResource(R.string.qr_hint), style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center)
             Text(
                 if (remaining > 0) stringResource(R.string.qr_expires_fmt, remaining / 60, remaining % 60)
                 else stringResource(R.string.qr_expired),
@@ -258,23 +264,23 @@ private fun QrCard(state: ConversationState) {
 }
 
 @Composable
-fun Bubble(m: ChatMessage) {
-    // Esnaf her zaman kendi dilindeki metni büyük görür.
-    val main = if (m.fromGuest) m.translated else m.original
-    val sub = if (m.fromGuest) m.original else m.translated
-    val subLang = Languages.of(if (m.fromGuest) m.sourceLang else m.targetLang)
-    Box(Modifier.fillMaxWidth(), contentAlignment = if (m.fromGuest) Alignment.CenterStart else Alignment.CenterEnd) {
+fun Bubble(m: ChatMessage, otherName: String) {
+    // Herkes kendi dilindeki metni büyük görür.
+    val main = if (m.mine) m.original else m.translated
+    val sub = if (m.mine) m.translated else m.original
+    val subLang = Languages.of(if (m.mine) m.targetLang else m.sourceLang)
+    Box(Modifier.fillMaxWidth(), contentAlignment = if (m.mine) Alignment.CenterEnd else Alignment.CenterStart) {
         Column(
             Modifier
                 .widthIn(max = 320.dp)
                 .background(
-                    if (m.fromGuest) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceVariant,
+                    if (m.mine) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surface,
                     RoundedCornerShape(16.dp),
                 )
                 .padding(12.dp)
         ) {
             Text(
-                stringResource(if (m.fromGuest) R.string.guest else R.string.you),
+                if (m.mine) stringResource(R.string.you) else otherName.ifEmpty { stringResource(R.string.other_person) },
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.primary,
             )
@@ -285,73 +291,13 @@ fun Bubble(m: ChatMessage) {
     }
 }
 
-fun money(amount: Double, code: String): String = runCatching {
-    NumberFormat.getCurrencyInstance().apply { currency = Currency.getInstance(code); maximumFractionDigits = 2 }.format(amount)
-}.getOrDefault("$amount $code")
-
 @Composable
-private fun PriceCard(p: Price) {
-    Card(
-        Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f)),
-    ) {
-        Column(Modifier.padding(16.dp)) {
-            Text(stringResource(R.string.price), style = MaterialTheme.typography.labelMedium)
-            Text(money(p.amount, p.currency), fontSize = 28.sp, fontWeight = FontWeight.ExtraBold)
-            Text(
-                p.conversions.filterKeys { it != p.currency }.entries.joinToString("   ") { "≈ ${money(it.value, it.key)}" },
-                style = MaterialTheme.typography.bodyMedium,
-            )
-        }
-    }
-}
-
-/** Pazarlık teklifi. [onReply] verilirse ve teklif karşı taraftansa Kabul/Ret düğmeleri çıkar. */
-@Composable
-fun OfferCard(o: Offer, mine: Boolean, onReply: ((Int, Boolean) -> Unit)?) {
-    val (statusText, color) = when (o.status) {
-        "accepted" -> stringResource(R.string.offer_accepted) to Color(0xFF2E8B57)
-        "rejected" -> stringResource(R.string.offer_rejected) to MaterialTheme.colorScheme.error
-        "countered" -> stringResource(R.string.offer_countered) to MaterialTheme.colorScheme.outline
-        else -> (if (mine) stringResource(R.string.offer_waiting) else "") to MaterialTheme.colorScheme.secondary
-    }
-    Card(
-        Modifier.fillMaxWidth().alpha(if (o.status == "countered" || o.status == "rejected") 0.6f else 1f),
-        border = BorderStroke(2.dp, color),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-    ) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(
-                stringResource(if (mine) R.string.offer_mine else R.string.offer_guest),
-                style = MaterialTheme.typography.labelMedium,
-            )
-            Text(money(o.amount, o.currency), fontSize = 26.sp, fontWeight = FontWeight.ExtraBold)
-            Text(
-                o.conversions.filterKeys { it != o.currency }.entries.joinToString("   ") { "≈ ${money(it.value, it.key)}" },
-                style = MaterialTheme.typography.bodySmall,
-            )
-            if (statusText.isNotEmpty()) Text(statusText, color = color, fontWeight = FontWeight.SemiBold)
-            if (onReply != null && !mine && o.status == "open") {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 6.dp)) {
-                    Button(
-                        onClick = { onReply(o.id, true) },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E8B57)),
-                    ) { Text(stringResource(R.string.accept)) }
-                    OutlinedButton(onClick = { onReply(o.id, false) }) { Text(stringResource(R.string.reject)) }
-                }
-                Text(stringResource(R.string.counter_hint), style = MaterialTheme.typography.bodySmall)
-            }
-        }
-    }
-}
-
-@Composable
-fun SummaryCard(texts: Map<String, String>, merchantLang: String) {
+fun SummaryCard(texts: Map<String, String>, myLang: String) {
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(stringResource(R.string.summary_title), style = MaterialTheme.typography.titleMedium)
-            // Önce esnafın dili, sonra turistin dili.
-            texts.entries.sortedBy { it.key != merchantLang }.forEachIndexed { i, (code, text) ->
+            // Önce kendi dilim, sonra karşı tarafın dili.
+            texts.entries.sortedBy { it.key != myLang }.forEachIndexed { i, (code, text) ->
                 if (i > 0) HorizontalDivider()
                 Text("${Languages.of(code).flag} $text")
             }
@@ -367,11 +313,13 @@ private fun Controls(
     level: Float,
     playing: Boolean,
     onMic: () -> Unit,
-    onPhrase: (String) -> Unit,
-    onPrice: (Double, String) -> Unit,
-    onOffer: (Double, String) -> Unit,
+    onSend: (String) -> Unit,
 ) {
-    var priceOpen by rememberSaveable { mutableStateOf(false) }
+    var draft by rememberSaveable { mutableStateOf("") }
+    fun send() {
+        onSend(draft)
+        draft = ""
+    }
     Surface(tonalElevation = 3.dp) {
         Column(
             Modifier
@@ -381,33 +329,16 @@ private fun Controls(
                 .padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                item {
-                    AssistChip(
-                        onClick = { priceOpen = !priceOpen },
-                        label = { Text("🤝 ${stringResource(R.string.price_and_offer)}") },
-                    )
-                }
-                items(state.phrases) { phrase ->
-                    AssistChip(onClick = { onPhrase(phrase) }, label = { Text(phrase) })
-                }
-            }
-            if (priceOpen) {
-                PriceInput(
-                    onShow = { a, c -> onPrice(a, c); priceOpen = false },
-                    onOffer = { a, c -> onOffer(a, c); priceOpen = false },
-                )
-            }
-
-            val waiting = state.processingFrom != null || playing || state.ending
+            val waiting = state.processing != null || playing || state.ending
             Text(
                 when {
                     state.ending -> stringResource(R.string.ending)
                     hearing -> stringResource(R.string.hearing)
                     micOn -> stringResource(R.string.mic_on)
-                    state.processingFrom != null -> stringResource(R.string.translating)
+                    state.processing != null -> stringResource(R.string.translating)
                     playing -> stringResource(R.string.playing)
                     state.noSpeech -> stringResource(R.string.no_speech)
+                    !state.otherConnected -> stringResource(R.string.waiting_other)
                     else -> stringResource(R.string.mic_off)
                 },
                 style = MaterialTheme.typography.bodyLarge,
@@ -422,6 +353,21 @@ private fun Controls(
                 onClick = onMic,
                 modifier = Modifier.align(Alignment.CenterHorizontally),
             )
+            // Sessiz ortamlar (sınıf, toplantı) için yazarak da gönderilebilir.
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = draft,
+                    onValueChange = { draft = it.take(500) },
+                    placeholder = { Text(stringResource(R.string.type_message)) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
+                    keyboardActions = KeyboardActions(onSend = { send() }),
+                    modifier = Modifier.weight(1f),
+                )
+                Button(onClick = ::send, enabled = draft.isNotBlank() && !state.ending) {
+                    Text(stringResource(R.string.send))
+                }
+            }
         }
     }
 }
@@ -456,39 +402,5 @@ private fun MicButton(
             contentPadding = PaddingValues(0.dp),
             modifier = Modifier.size(76.dp),
         ) { Text(if (micOn) "■" else "🎤", fontSize = 30.sp, color = Color.White) }
-    }
-}
-
-@Composable
-private fun PriceInput(onShow: (Double, String) -> Unit, onOffer: (Double, String) -> Unit) {
-    var amount by rememberSaveable { mutableStateOf("") }
-    var currency by rememberSaveable { mutableStateOf("TRY") }
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            listOf("TRY" to "₺", "EUR" to "€", "USD" to "$", "GBP" to "£").forEach { (code, symbol) ->
-                FilterChip(selected = currency == code, onClick = { currency = code }, label = { Text("$symbol $code") })
-            }
-        }
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedTextField(
-                value = amount,
-                onValueChange = { v -> amount = v.filter { it.isDigit() || it == '.' || it == ',' } },
-                label = { Text(stringResource(R.string.price_hint)) },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                modifier = Modifier.weight(1f),
-            )
-        }
-        // "Göster" yalnızca bilgi verir; "Teklif ver" pazarlık başlatır, turist kabul edebilir ya da karşı teklif verir.
-        val value = amount.replace(',', '.').toDoubleOrNull()
-        val valid = value != null && value > 0
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedButton(onClick = { value?.let { onShow(it, currency) } }, enabled = valid) {
-                Text(stringResource(R.string.show_price))
-            }
-            Button(onClick = { value?.let { onOffer(it, currency) } }, enabled = valid) {
-                Text(stringResource(R.string.make_offer))
-            }
-        }
     }
 }

@@ -20,13 +20,13 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.hostytalk.app.data.BusinessTypes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
 import com.hostytalk.app.R
@@ -40,7 +40,9 @@ fun errorText(code: String): String = stringResource(
         "email_taken" -> R.string.err_email_taken
         "quota_exceeded" -> R.string.err_quota
         "ai_failed", "summary_failed" -> R.string.err_ai
-        "session_not_found", "invalid_token" -> R.string.err_session
+        "invalid_token" -> R.string.err_session
+        "session_not_found" -> R.string.err_code_invalid
+        "session_full" -> R.string.err_session_full
         "http_422" -> R.string.err_validation
         else -> R.string.err_generic
     }
@@ -58,38 +60,6 @@ fun LanguagePicker(label: String, current: String, onPick: (String) -> Unit) {
                 DropdownMenuItem(
                     text = { Text("${l.flag}  ${l.nativeName}") },
                     onClick = { open = false; onPick(l.code) },
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun businessTypeLabel(code: String): String = stringResource(
-    when (code) {
-        "hotel" -> R.string.bt_hotel
-        "restaurant" -> R.string.bt_restaurant
-        "shop" -> R.string.bt_shop
-        "taxi" -> R.string.bt_taxi
-        "guide" -> R.string.bt_guide
-        "car_rental" -> R.string.bt_car_rental
-        else -> R.string.bt_other
-    }
-)
-
-/** İşletme türü seçici; hazır cümle seti buna göre gelir. */
-@Composable
-fun BusinessTypePicker(current: String, onPick: (String) -> Unit) {
-    var open by remember { mutableStateOf(false) }
-    Column {
-        OutlinedButton(onClick = { open = true }) {
-            Text("${stringResource(R.string.business_type)}: ${BusinessTypes.emoji(current)} ${businessTypeLabel(current)}")
-        }
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-            BusinessTypes.all.forEach { (code, emoji) ->
-                DropdownMenuItem(
-                    text = { Text("$emoji  ${businessTypeLabel(code)}") },
-                    onClick = { open = false; onPick(code) },
                 )
             }
         }
@@ -141,6 +111,39 @@ fun ServerUrlDialog(current: String, onSave: (String) -> Unit, onDismiss: () -> 
             }
         },
         confirmButton = { TextButton(onClick = { onSave(value); onDismiss() }) { Text(stringResource(R.string.save)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
+    )
+}
+
+/** Karşı tarafın verdiği 6 haneli kodla konuşmaya katılma penceresi. */
+@Composable
+fun JoinDialog(onJoin: (String) -> Unit, onDismiss: () -> Unit) {
+    var code by remember { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.join_conversation)) },
+        text = {
+            Column {
+                Text(stringResource(R.string.join_dialog_hint))
+                OutlinedTextField(
+                    value = code,
+                    // Boşluk ve küçük harf girilse de kod tanınsın.
+                    onValueChange = { v -> code = v.filter { it.isLetterOrDigit() }.uppercase().take(6) },
+                    singleLine = true,
+                    placeholder = { Text("ABC 123") },
+                    textStyle = MaterialTheme.typography.headlineSmall,
+                    keyboardOptions = KeyboardOptions(
+                        capitalization = KeyboardCapitalization.Characters,
+                        keyboardType = KeyboardType.Ascii,
+                    ),
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onJoin(code); onDismiss() }, enabled = code.length == 6) {
+                Text(stringResource(R.string.join))
+            }
+        },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
     )
 }

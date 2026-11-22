@@ -58,8 +58,7 @@ fun LoginScreen(vm: AuthViewModel = viewModel()) {
     var register by rememberSaveable { mutableStateOf(false) }
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
-    var business by rememberSaveable { mutableStateOf("") }
-    var businessType by rememberSaveable { mutableStateOf("shop") }
+    var name by rememberSaveable { mutableStateOf("") }
     var serverDialog by rememberSaveable { mutableStateOf(false) }
 
     Scaffold { padding ->
@@ -95,19 +94,19 @@ fun LoginScreen(vm: AuthViewModel = viewModel()) {
             )
             if (register) {
                 OutlinedTextField(
-                    value = business, onValueChange = { business = it },
-                    label = { Text(stringResource(R.string.business_name)) },
+                    value = name, onValueChange = { name = it.take(60) },
+                    label = { Text(stringResource(R.string.display_name)) },
+                    supportingText = { Text(stringResource(R.string.display_name_hint)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
-                Row(Modifier.fillMaxWidth()) { BusinessTypePicker(businessType) { businessType = it } }
             }
 
             state.error?.let { Text(errorText(it), color = MaterialTheme.colorScheme.error) }
 
             Button(
-                onClick = { vm.submit(register, email, password, business, businessType) },
-                enabled = !state.loading && email.isNotBlank() && password.length >= 6 && (!register || business.isNotBlank()),
+                onClick = { vm.submit(register, email, password, name) },
+                enabled = !state.loading && email.isNotBlank() && password.length >= 6 && (!register || name.isNotBlank()),
                 modifier = Modifier.fillMaxWidth().height(52.dp),
             ) {
                 if (state.loading) CircularProgressIndicator(Modifier.height(20.dp))

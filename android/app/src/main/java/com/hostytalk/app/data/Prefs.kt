@@ -14,11 +14,12 @@ private val Context.dataStore by preferencesDataStore(name = "hostytalk")
 class Prefs(private val context: Context) {
     private val tokenKey = stringPreferencesKey("token")
     private val serverKey = stringPreferencesKey("server_url")
-    private val merchantLangKey = stringPreferencesKey("merchant_lang")
+    // Anahtar adı ilk sürümden kaldı; kayıtlı dil seçimi kaybolmasın diye değiştirilmedi.
+    private val myLangKey = stringPreferencesKey("merchant_lang")
 
     val token: Flow<String?> = context.dataStore.data.map { it[tokenKey] }
     val serverUrl: Flow<String> = context.dataStore.data.map { it[serverKey] ?: BuildConfig.API_BASE_URL }
-    val merchantLang: Flow<String> = context.dataStore.data.map { it[merchantLangKey] ?: "tr" }
+    val myLang: Flow<String> = context.dataStore.data.map { it[myLangKey] ?: "tr" }
 
     suspend fun currentToken(): String? = token.first()
     suspend fun currentServerUrl(): String = serverUrl.first()
@@ -29,5 +30,5 @@ class Prefs(private val context: Context) {
 
     suspend fun setServerUrl(value: String) = context.dataStore.edit { it[serverKey] = value.trim().trimEnd('/') }
 
-    suspend fun setMerchantLang(value: String) = context.dataStore.edit { it[merchantLangKey] = value }
+    suspend fun setMyLang(value: String) = context.dataStore.edit { it[myLangKey] = value }
 }

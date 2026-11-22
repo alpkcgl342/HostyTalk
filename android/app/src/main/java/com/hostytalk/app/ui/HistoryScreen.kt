@@ -104,19 +104,15 @@ private fun dateText(context: Context, epochSeconds: Long): String =
         DateUtils.FORMAT_SHOW_DATE or DateUtils.FORMAT_SHOW_TIME or DateUtils.FORMAT_ABBREV_MONTH,
     )
 
-/** Özeti ve paylaşım bağlantısını telefonun paylaş menüsüyle gönderir (WhatsApp, e-posta...). */
-fun shareSummary(context: Context, title: String, summary: Map<String, String>?, merchantLang: String, url: String?) {
+/** Özeti telefonun paylaş menüsüyle gönderir (WhatsApp, e-posta...). */
+fun shareSummary(context: Context, title: String, summary: Map<String, String>?, myLang: String) {
     val text = buildString {
         appendLine(title)
-        summary?.entries?.sortedBy { it.key != merchantLang }?.forEach { (code, s) ->
+        summary?.entries?.sortedBy { it.key != myLang }?.forEach { (code, s) ->
             appendLine()
             appendLine("${Languages.of(code).flag} $s")
         }
-        if (url != null) {
-            appendLine()
-            append(url)
-        }
-    }
+    }.trim()
     val send = Intent(Intent.ACTION_SEND).apply {
         type = "text/plain"
         putExtra(Intent.EXTRA_TEXT, text)
@@ -145,16 +141,19 @@ fun HistoryScreen(onBack: () -> Unit, onOpen: (Int) -> Unit, vm: HistoryViewMode
                 item { Text(stringResource(R.string.history_empty)) }
             }
             items(state.list, key = { it.id }) { c ->
-                val guest = Languages.of(c.guestLang)
+                val other = Languages.of(c.otherLang)
                 Card(Modifier.fillMaxWidth().clickable { onOpen(c.id) }) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("${guest.flag} ${guest.nativeName}", fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                            Text(
+                                "${other.flag} ${c.otherName.ifEmpty { stringResource(R.string.other_person) }}",
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.weight(1f),
+                            )
                             Text(dateText(context, c.startedAt), style = MaterialTheme.typography.bodySmall)
                         }
-                        c.agreed?.let { Text("🤝 ${money(it.amount, it.currency)}", fontWeight = FontWeight.Bold) }
                         Text(
-                            c.summary?.get(c.merchantLang)
+                            c.summary?.get(c.myLang)
                                 ?: stringResource(R.string.messages_count_fmt, c.messageCount ?: 0),
                             style = MaterialTheme.typography.bodyMedium,
                             maxLines = 2,
@@ -168,7 +167,7 @@ fun HistoryScreen(onBack: () -> Unit, onOpen: (Int) -> Unit, vm: HistoryViewMode
 }
 
 @Composable
-fun HistoryDetailScreen(id: Int, businessName: String, onBack: () -> Unit, vm: HistoryViewModel = viewModel()) {
+fun HistoryDetailScreen(id: Int, onBack: () -> Unit, vm: HistoryViewModel = viewModel()) {
     val state by vm.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var confirmDelete by rememberSaveable { mutableStateOf(false) }
@@ -188,14 +187,14 @@ fun HistoryDetailScreen(id: Int, businessName: String, onBack: () -> Unit, vm: H
                 return@LazyColumn
             }
             item {
-                val guest = Languages.of(c.guestLang)
-                val me = Languages.of(c.merchantLang)
-                Text("${me.flag} ${me.nativeName} ⇄ ${guest.flag} ${guest.nativeName}", fontWeight = FontWeight.SemiBold)
+                val other = Languages.of(c.otherLang)
+                val me = Languages.of(c.myLang)
+                Text(c.otherName.ifEmpty { stringResource(R.string.other_person) }, style = MaterialTheme.typography.titleLarge)
+                Text("${me.flag} ${me.nativeName} ⇄ ${other.flag} ${other.nativeName}", fontWeight = FontWeight.SemiBold)
                 Text(dateText(context, c.startedAt), style = MaterialTheme.typography.bodySmall)
             }
-            c.agreed?.let { item { OfferCard(it, mine = it.by == "merchant", onReply = null) } }
             if (c.summary != null) {
-                item { SummaryCard(c.summary, c.merchantLang) }
+                item { SummaryCard(c.summary, c.myLang) }
             } else {
                 item {
                     OutlinedButton(onClick = { vm.summarize(id) }, enabled = !state.summarizing) {
@@ -204,27 +203,23 @@ fun HistoryDetailScreen(id: Int, businessName: String, onBack: () -> Unit, vm: H
                 }
             }
             item {
+                val title = stringResource(R.string.summary_share_title, c.otherName)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = {
-                        shareSummary(context, businessName, c.summary, c.merchantLang, c.shareUrl)
-                    }) { Text(stringResource(R.string.share)) }
+                    if (c.summary != null) {
+                        Button(onClick = { shareSummary(context, title, c.summary, c.myLang) }) {
+                            Text(stringResource(R.string.share))
+                        }
+                    }
                     TextButton(onClick = { confirmDelete = true }) {
                         Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error)
                     }
                 }
             }
-            val offers = c.offers.filter { it != c.agreed }
-            if (offers.isNotEmpty()) {
-                item { SectionTitle(stringResource(R.string.bargaining)) }
-                items(offers, key = { "o${it.id}" }) { OfferCard(it, mine = it.by == "merchant", onReply = null) }
-            }
             val messages = c.messages.orEmpty()
             if (messages.isNotEmpty()) {
                 item { HorizontalDivider(); SectionTitle(stringResource(R.string.transcript)) }
                 items(messages, key = { "m${it.id}" }) { m ->
-                    Bubble(
-                        ChatMessage(m.id, m.from == "guest", m.original, m.translated, m.sourceLang, m.targetLang)
-                    )
+                    Bubble(ChatMessage(m.id, m.mine, m.original, m.translated, m.sourceLang, m.targetLang), c.otherName)
                 }
             }
         }
@@ -243,4 +238,14 @@ fun HistoryDetailScreen(id: Int, businessName: String, onBack: () -> Unit, vm: H
             dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(stringResource(R.string.cancel)) } },
         )
     }
+}
+
+@Composable
+fun SectionTitle(text: String) {
+    Text(
+        text,
+        style = MaterialTheme.typography.titleMedium,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.padding(top = 12.dp),
+    )
 }

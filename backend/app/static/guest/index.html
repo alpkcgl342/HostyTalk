@@ -14,30 +14,33 @@
   </header>
 
   <main>
-    <section id="welcome" class="card center">
-      <p id="business" class="business"></p>
+    <section id="invite" class="card center">
+      <p id="inviteText" class="business"></p>
       <p data-i18n="welcome"></p>
+    </section>
+
+    <!-- Giriş / kayıt: iki tarafın da hesabı olur -->
+    <form id="authForm" class="card authForm hidden">
+      <h3 id="authTitle"></h3>
+      <input id="email" type="email" autocomplete="email" required>
+      <input id="password" type="password" autocomplete="current-password" minlength="6" required>
+      <input id="displayName" autocomplete="name" maxlength="60" class="hidden">
+      <p id="authError" class="error hidden"></p>
+      <button type="submit" id="authSubmit" class="primary big"></button>
+      <button type="button" id="authToggle" class="link"></button>
+    </form>
+
+    <section id="welcome" class="card center hidden">
+      <p id="signedInAs" class="hint"></p>
       <button id="start" class="primary big" data-i18n="start"></button>
       <p class="hint" data-i18n="startHint"></p>
+      <button type="button" id="logout" class="link" data-i18n="logout"></button>
     </section>
 
     <section id="closed" class="card center hidden">
       <p id="closedText"></p>
     </section>
 
-    <section id="price" class="card price hidden"></section>
-    <section id="offers" class="offers"></section>
-    <form id="counterForm" class="card counter hidden">
-      <label for="counterAmount" data-i18n="yourOffer"></label>
-      <div class="row">
-        <input id="counterAmount" inputmode="decimal" autocomplete="off" maxlength="12">
-        <select id="counterCurrency" aria-label="Currency">
-          <option value="EUR">€ EUR</option><option value="USD">$ USD</option>
-          <option value="GBP">£ GBP</option><option value="TRY">₺ TRY</option>
-        </select>
-        <button type="submit" class="primary" data-i18n="sendOffer"></button>
-      </div>
-    </form>
     <section id="summary" class="card summary hidden"></section>
 
     <ol id="transcript" class="transcript"></ol>

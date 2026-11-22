@@ -24,18 +24,3 @@ object Languages {
         AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(code))
     }
 }
-
-/** İşletme türleri; hazır cümle setleri buna göre sunucudan gelir (app/phrases.py ile aynı kodlar). */
-object BusinessTypes {
-    val all = listOf(
-        "hotel" to "🏨",
-        "restaurant" to "🍽️",
-        "shop" to "🛍️",
-        "taxi" to "🚕",
-        "guide" to "🧭",
-        "car_rental" to "🚗",
-        "other" to "🏪",
-    )
-
-    fun emoji(code: String): String = all.firstOrNull { it.first == code }?.second ?: "🏪"
-}

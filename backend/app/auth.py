@@ -26,12 +26,12 @@ def verify_password(password: str, stored: str) -> bool:
     return hmac.compare_digest(digest.hex(), digest_hex)
 
 
-def create_token(merchant_id: int) -> str:
-    payload = {"sub": str(merchant_id), "exp": int(time.time()) + _TOKEN_TTL_SECONDS}
+def create_token(user_id: int) -> str:
+    payload = {"sub": str(user_id), "exp": int(time.time()) + _TOKEN_TTL_SECONDS}
     return jwt.encode(payload, settings.jwt_secret, algorithm="HS256")
 
 
-def merchant_id_from_token(token: str) -> int | None:
+def user_id_from_token(token: str) -> int | None:
     try:
         payload = jwt.decode(token, settings.jwt_secret, algorithms=["HS256"])
         return int(payload["sub"])
@@ -42,9 +42,9 @@ def merchant_id_from_token(token: str) -> int | None:
 _bearer = HTTPBearer(auto_error=False)
 
 
-def current_merchant(creds: HTTPAuthorizationCredentials | None = Depends(_bearer)):
-    merchant_id = merchant_id_from_token(creds.credentials) if creds else None
-    merchant = db.get_merchant(merchant_id) if merchant_id else None
-    if merchant is None:
+def current_user(creds: HTTPAuthorizationCredentials | None = Depends(_bearer)):
+    user_id = user_id_from_token(creds.credentials) if creds else None
+    user = db.get_user(user_id) if user_id else None
+    if user is None:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "invalid_token")
-    return merchant
+    return user

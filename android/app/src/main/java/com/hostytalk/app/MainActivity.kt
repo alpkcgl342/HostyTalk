@@ -13,14 +13,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.compose.ui.res.stringResource
 import com.hostytalk.app.ui.AppViewModel
 import com.hostytalk.app.ui.ConversationScreen
 import com.hostytalk.app.ui.HistoryDetailScreen
 import com.hostytalk.app.ui.HistoryScreen
 import com.hostytalk.app.ui.HomeScreen
 import com.hostytalk.app.ui.LoginScreen
-import com.hostytalk.app.ui.PhrasesScreen
 import com.hostytalk.app.ui.Screen
 import com.hostytalk.app.ui.theme.HostyTalkTheme
 
@@ -45,14 +43,12 @@ private fun Root(vm: AppViewModel = viewModel()) {
         active != null -> ConversationScreen(active, onClose = vm::closeSession)
         else -> when (val s = screen) {
             Screen.Home -> HomeScreen(
-                onStarted = vm::open,
+                onOpen = vm::open,
                 onLogout = { vm.logout() },
-                onPhrases = { vm.go(Screen.Phrases) },
                 onHistory = { vm.go(Screen.History) },
             )
-            Screen.Phrases -> PhrasesScreen(onBack = vm::back)
             Screen.History -> HistoryScreen(onBack = vm::back, onOpen = { vm.go(Screen.HistoryDetail(it)) })
-            is Screen.HistoryDetail -> HistoryDetailScreen(s.id, stringResource(R.string.app_name), onBack = vm::back)
+            is Screen.HistoryDetail -> HistoryDetailScreen(s.id, onBack = vm::back)
         }
     }
 }

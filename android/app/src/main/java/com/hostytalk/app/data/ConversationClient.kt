@@ -30,19 +30,20 @@ data class ServerEvent(
     @SerialName("source_lang") val sourceLang: String? = null,
     @SerialName("target_lang") val targetLang: String? = null,
     @SerialName("audio_b64") val audioB64: String? = null,
-    @SerialName("merchant_lang") val merchantLang: String? = null,
+    @SerialName("host_name") val hostName: String? = null,
+    @SerialName("guest_name") val guestName: String? = null,
+    @SerialName("host_lang") val hostLang: String? = null,
     @SerialName("guest_lang") val guestLang: String? = null,
+    @SerialName("host_connected") val hostConnected: Boolean? = null,
     @SerialName("guest_connected") val guestConnected: Boolean? = null,
     @SerialName("join_url") val joinUrl: String? = null,
     @SerialName("join_expires_at") val joinExpiresAt: Long? = null,
-    val amount: Double? = null,
-    val currency: String? = null,
-    val conversions: Map<String, Double>? = null,
     val texts: Map<String, String>? = null,
+    /** "state" olayında katılım kodu, "error" olayında hata kodu. */
     val code: String? = null,
+    /** "ended": konuşmayı bitiren taraf. */
     val by: String? = null,
-    val status: String? = null,
-    @SerialName("share_url") val shareUrl: String? = null,
+    @SerialName("conversation_id") val conversationId: Int? = null,
 )
 
 enum class Connection { Connecting, Open, Reconnecting, Closed }

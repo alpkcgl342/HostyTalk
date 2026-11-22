@@ -1,4 +1,4 @@
-// HostyTalk turist sayfası: hesapsız, QR ile katılım.
+// HostyTalk web katılım sayfası: QR ile açılır, kullanıcı hesabıyla giriş yapıp konuşmaya katılır.
 // Mikrofon sesli asistan gibi çalışır: dokun → konuş → susunca kendiliğinden kapanır ve gönderilir.
 (() => {
   "use strict";
@@ -6,112 +6,130 @@
   const LANGS = { tr: "Türkçe", en: "English", ar: "العربية", fr: "Français", ru: "Русский" };
 
   const T = {
-    en: { welcome: "Speak in your language, the host will hear it in theirs.", start: "Start conversation",
+    en: { welcome: "Speak in your language — the other person hears it in theirs.",
+      invite: "{name} invited you to a conversation", signIn: "Sign in", register: "Create account",
+      email: "Email", password: "Password (min. 6 characters)", name: "Your name",
+      haveAccount: "Already have an account? Sign in", noAccount: "New here? Create an account",
+      signedInAs: "Signed in as {name}", logout: "Sign out", start: "Join conversation",
       startHint: "Allow microphone access when asked.", send: "Send", typeHere: "Or type a message…",
       tapToSpeak: "Tap the microphone and speak.", listening: "Listening… speak now.", hearing: "Hearing you…",
       noSpeech: "I didn't hear anything. Tap to try again.", translating: "Translating…",
       playing: "Playing translation…", sameLang: "Choose your language at the top right.",
-      expired: "This conversation link has expired. Please ask for a new QR code.",
-      ended: "The conversation has ended. Thank you!", reconnecting: "Connection lost, reconnecting…",
-      noMic: "Microphone is not available here. You can still type.", summary: "What we agreed on",
-      price: "Price", error: "Something went wrong, please try again." },
-    tr: { welcome: "Kendi dilinizde konuşun, karşı taraf kendi dilinde duysun.", start: "Konuşmayı başlat",
+      expired: "This conversation code is no longer valid. Ask for a new one.",
+      full: "This conversation already has two people.",
+      ended: "The conversation has ended. You can find it in your history in the HostyTalk app.",
+      reconnecting: "Connection lost, reconnecting…", noMic: "Microphone is not available here. You can still type.",
+      summary: "Summary", error: "Something went wrong, please try again.",
+      errCredentials: "Wrong email or password.", errTaken: "An account with this email already exists." },
+    tr: { welcome: "Kendi dilinizde konuşun, karşınızdaki kendi dilinde duysun.",
+      invite: "{name} sizi bir konuşmaya davet etti", signIn: "Giriş yap", register: "Hesap oluştur",
+      email: "E-posta", password: "Şifre (en az 6 karakter)", name: "Adınız",
+      haveAccount: "Hesabınız var mı? Giriş yapın", noAccount: "Yeni misiniz? Hesap oluşturun",
+      signedInAs: "{name} olarak giriş yapıldı", logout: "Çıkış yap", start: "Konuşmaya katıl",
       startHint: "İstendiğinde mikrofon izni verin.", send: "Gönder", typeHere: "Ya da mesaj yazın…",
       tapToSpeak: "Mikrofona dokunun ve konuşun.", listening: "Dinliyorum… konuşabilirsiniz.", hearing: "Sizi duyuyorum…",
       noSpeech: "Bir şey duyamadım. Tekrar denemek için dokunun.", translating: "Çevriliyor…",
       playing: "Çeviri seslendiriliyor…", sameLang: "Sağ üstten kendi dilinizi seçin.",
-      expired: "Bu konuşma bağlantısının süresi doldu. Lütfen yeni bir QR kod isteyin.",
-      ended: "Konuşma sona erdi. Teşekkürler!", reconnecting: "Bağlantı koptu, yeniden bağlanılıyor…",
-      noMic: "Burada mikrofon kullanılamıyor. Yine de yazabilirsiniz.", summary: "Neyde anlaştık",
-      price: "Fiyat", error: "Bir sorun oluştu, lütfen tekrar deneyin." },
-    ar: { welcome: "تحدّث بلغتك، وسيسمعك المضيف بلغته.", start: "ابدأ المحادثة",
+      expired: "Bu konuşma kodu artık geçerli değil. Yeni bir kod isteyin.",
+      full: "Bu konuşmada zaten iki kişi var.",
+      ended: "Konuşma sona erdi. HostyTalk uygulamasında geçmişinizde bulabilirsiniz.",
+      reconnecting: "Bağlantı koptu, yeniden bağlanılıyor…", noMic: "Burada mikrofon kullanılamıyor. Yine de yazabilirsiniz.",
+      summary: "Özet", error: "Bir sorun oluştu, lütfen tekrar deneyin.",
+      errCredentials: "E-posta ya da şifre hatalı.", errTaken: "Bu e-posta ile kayıtlı bir hesap zaten var." },
+    ar: { welcome: "تحدّث بلغتك، وسيسمعك الطرف الآخر بلغته.",
+      invite: "دعاك {name} إلى محادثة", signIn: "تسجيل الدخول", register: "إنشاء حساب",
+      email: "البريد الإلكتروني", password: "كلمة المرور (6 أحرف على الأقل)", name: "اسمك",
+      haveAccount: "لديك حساب؟ سجّل الدخول", noAccount: "جديد هنا؟ أنشئ حساباً",
+      signedInAs: "تم تسجيل الدخول باسم {name}", logout: "تسجيل الخروج", start: "انضم إلى المحادثة",
       startHint: "اسمح بالوصول إلى الميكروفون عند الطلب.", send: "إرسال", typeHere: "أو اكتب رسالة…",
       tapToSpeak: "اضغط على الميكروفون وتحدّث.", listening: "أستمع… تحدّث الآن.", hearing: "أسمعك…",
       noSpeech: "لم أسمع شيئاً. اضغط للمحاولة مرة أخرى.", translating: "جارٍ الترجمة…",
       playing: "تشغيل الترجمة…", sameLang: "اختر لغتك من أعلى الصفحة.",
-      expired: "انتهت صلاحية رابط المحادثة. يرجى طلب رمز QR جديد.",
-      ended: "انتهت المحادثة. شكرًا لك!", reconnecting: "انقطع الاتصال، جارٍ إعادة الاتصال…",
-      noMic: "الميكروفون غير متاح هنا. لا يزال بإمكانك الكتابة.", summary: "ما اتفقنا عليه",
-      price: "السعر", error: "حدث خطأ ما، يرجى المحاولة مرة أخرى." },
-    fr: { welcome: "Parlez dans votre langue, votre hôte vous entendra dans la sienne.", start: "Commencer la conversation",
+      expired: "رمز المحادثة لم يعد صالحاً. اطلب رمزاً جديداً.",
+      full: "هذه المحادثة تضم شخصين بالفعل.",
+      ended: "انتهت المحادثة. يمكنك العثور عليها في سجلك في تطبيق HostyTalk.",
+      reconnecting: "انقطع الاتصال، جارٍ إعادة الاتصال…", noMic: "الميكروفون غير متاح هنا. لا يزال بإمكانك الكتابة.",
+      summary: "الملخص", error: "حدث خطأ ما، يرجى المحاولة مرة أخرى.",
+      errCredentials: "البريد الإلكتروني أو كلمة المرور غير صحيحة.", errTaken: "يوجد حساب مسجّل بهذا البريد الإلكتروني." },
+    fr: { welcome: "Parlez dans votre langue, l'autre personne vous entend dans la sienne.",
+      invite: "{name} vous invite à une conversation", signIn: "Se connecter", register: "Créer un compte",
+      email: "E-mail", password: "Mot de passe (6 caractères min.)", name: "Votre nom",
+      haveAccount: "Déjà un compte ? Connectez-vous", noAccount: "Nouveau ? Créez un compte",
+      signedInAs: "Connecté en tant que {name}", logout: "Se déconnecter", start: "Rejoindre la conversation",
       startHint: "Autorisez l'accès au micro lorsqu'il est demandé.", send: "Envoyer", typeHere: "Ou écrivez un message…",
       tapToSpeak: "Touchez le micro et parlez.", listening: "À l'écoute… parlez maintenant.", hearing: "Je vous entends…",
       noSpeech: "Je n'ai rien entendu. Touchez pour réessayer.", translating: "Traduction…",
       playing: "Lecture de la traduction…", sameLang: "Choisissez votre langue en haut à droite.",
-      expired: "Ce lien de conversation a expiré. Demandez un nouveau QR code.",
-      ended: "La conversation est terminée. Merci !", reconnecting: "Connexion perdue, reconnexion…",
-      noMic: "Le micro n'est pas disponible ici. Vous pouvez toujours écrire.", summary: "Ce que nous avons convenu",
-      price: "Prix", error: "Un problème est survenu, veuillez réessayer." },
-    ru: { welcome: "Говорите на своём языке — хозяин услышит вас на своём.", start: "Начать разговор",
+      expired: "Ce code de conversation n'est plus valable. Demandez-en un nouveau.",
+      full: "Cette conversation compte déjà deux personnes.",
+      ended: "La conversation est terminée. Vous la retrouverez dans votre historique dans l'application HostyTalk.",
+      reconnecting: "Connexion perdue, reconnexion…", noMic: "Le micro n'est pas disponible ici. Vous pouvez toujours écrire.",
+      summary: "Résumé", error: "Un problème est survenu, veuillez réessayer.",
+      errCredentials: "E-mail ou mot de passe incorrect.", errTaken: "Un compte existe déjà avec cet e-mail." },
+    ru: { welcome: "Говорите на своём языке — собеседник услышит вас на своём.",
+      invite: "{name} приглашает вас в разговор", signIn: "Войти", register: "Создать аккаунт",
+      email: "Эл. почта", password: "Пароль (не менее 6 символов)", name: "Ваше имя",
+      haveAccount: "Уже есть аккаунт? Войдите", noAccount: "Впервые здесь? Создайте аккаунт",
+      signedInAs: "Вы вошли как {name}", logout: "Выйти", start: "Присоединиться к разговору",
       startHint: "Разрешите доступ к микрофону, когда появится запрос.", send: "Отправить", typeHere: "Или напишите сообщение…",
       tapToSpeak: "Нажмите на микрофон и говорите.", listening: "Слушаю… говорите.", hearing: "Слышу вас…",
       noSpeech: "Ничего не слышно. Нажмите, чтобы попробовать снова.", translating: "Перевожу…",
       playing: "Воспроизвожу перевод…", sameLang: "Выберите свой язык вверху справа.",
-      expired: "Срок действия ссылки истёк. Попросите новый QR-код.",
-      ended: "Разговор завершён. Спасибо!", reconnecting: "Связь потеряна, переподключение…",
-      noMic: "Микрофон здесь недоступен. Вы можете писать.", summary: "О чём мы договорились",
-      price: "Цена", error: "Что-то пошло не так, попробуйте ещё раз." },
+      expired: "Этот код разговора больше не действует. Попросите новый.",
+      full: "В этом разговоре уже два человека.",
+      ended: "Разговор завершён. Он сохранён в вашей истории в приложении HostyTalk.",
+      reconnecting: "Связь потеряна, переподключение…", noMic: "Микрофон здесь недоступен. Вы можете писать.",
+      summary: "Резюме", error: "Что-то пошло не так, попробуйте ещё раз.",
+      errCredentials: "Неверная эл. почта или пароль.", errTaken: "Аккаунт с этой эл. почтой уже существует." },
   };
-
-  // Pazarlık ve özet kaydı metinleri
-  const T_OFFERS = {
-    en: { hostOffer: "Host's offer", myOffer: "Your offer", accept: "Accept", counter: "Counter-offer",
-      yourOffer: "Your counter-offer", sendOffer: "Send", waitingReply: "Waiting for the host's answer…",
-      st_accepted: "Agreed ✓", st_rejected: "Declined", st_countered: "Countered", saveSummary: "Save summary" },
-    tr: { hostOffer: "İşletmenin teklifi", myOffer: "Sizin teklifiniz", accept: "Kabul et", counter: "Karşı teklif",
-      yourOffer: "Karşı teklifiniz", sendOffer: "Gönder", waitingReply: "İşletmenin yanıtı bekleniyor…",
-      st_accepted: "Anlaşıldı ✓", st_rejected: "Reddedildi", st_countered: "Karşı teklif verildi", saveSummary: "Özeti kaydet" },
-    ar: { hostOffer: "عرض المضيف", myOffer: "عرضك", accept: "قبول", counter: "عرض مضاد",
-      yourOffer: "عرضك المضاد", sendOffer: "إرسال", waitingReply: "في انتظار رد المضيف…",
-      st_accepted: "تم الاتفاق ✓", st_rejected: "مرفوض", st_countered: "تم تقديم عرض مضاد", saveSummary: "حفظ الملخص" },
-    fr: { hostOffer: "Offre de l'hôte", myOffer: "Votre offre", accept: "Accepter", counter: "Contre-offre",
-      yourOffer: "Votre contre-offre", sendOffer: "Envoyer", waitingReply: "En attente de la réponse de l'hôte…",
-      st_accepted: "Accord conclu ✓", st_rejected: "Refusée", st_countered: "Contre-offre faite", saveSummary: "Enregistrer le résumé" },
-    ru: { hostOffer: "Предложение хозяина", myOffer: "Ваше предложение", accept: "Принять", counter: "Встречное предложение",
-      yourOffer: "Ваше встречное предложение", sendOffer: "Отправить", waitingReply: "Ждём ответа хозяина…",
-      st_accepted: "Договорились ✓", st_rejected: "Отклонено", st_countered: "Сделано встречное", saveSummary: "Сохранить резюме" },
-  };
-  for (const [l, strings] of Object.entries(T_OFFERS)) Object.assign(T[l], strings);
-
-  const CURRENCY_SYMBOL = { TRY: "₺", EUR: "€", USD: "$", GBP: "£" };
 
   const $ = (id) => document.getElementById(id);
-  const sessionId = location.pathname.split("/").filter(Boolean).pop();
-  const joinKey = new URLSearchParams(location.search).get("k") || "";
+  const code = (location.pathname.split("/").filter(Boolean).pop() || "").toUpperCase();
 
   let lang = detectLang();
-  let merchantLang = null;
+  let token = safeGet("hostytalk.token");
+  let me = null;          // giriş yapan kullanıcı
+  let invite = null;      // { host_name, host_lang }
+  let session = null;     // katıldıktan sonra sunucunun döndürdüğü oturum
+  let registerMode = false;
   let ws = null;
   let ended = false;
   let busy = false;
-  let notice = ""; // geçici durum mesajı (ör. "bir şey duyamadım")
+  let notice = "";
 
   function detectLang() {
     const saved = safeGet("hostytalk.lang");
     if (saved && LANGS[saved]) return saved;
     for (const l of navigator.languages || [navigator.language || "en"]) {
-      const code = l.toLowerCase().split("-")[0];
-      if (LANGS[code]) return code;
+      const c = l.toLowerCase().split("-")[0];
+      if (LANGS[c]) return c;
     }
     return "en";
   }
+  // Tarayıcı depolaması kapalıysa (gizli sekme vb.) sayfa yine çalışsın.
   function safeGet(k) { try { return localStorage.getItem(k); } catch { return null; } }
-  function safeSet(k, v) { try { localStorage.setItem(k, v); } catch { /* yoksay */ } }
-  const t = (key) => (T[lang] && T[lang][key]) || T.en[key];
+  function safeSet(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch { /* yoksay */ } }
+  const t = (key, vars = {}) =>
+    ((T[lang] && T[lang][key]) || T.en[key]).replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? "");
 
   function applyLang() {
     document.documentElement.lang = lang;
     document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
     document.querySelectorAll("[data-i18n]").forEach((el) => (el.textContent = t(el.dataset.i18n)));
     $("textInput").placeholder = t("typeHere");
+    $("email").placeholder = t("email");
+    $("password").placeholder = t("password");
+    $("displayName").placeholder = t("name");
     $("lang").value = lang;
-    renderOffers();
+    renderAuth();
+    if (invite) $("inviteText").textContent = t("invite", { name: invite.host_name });
+    if (me) $("signedInAs").textContent = t("signedInAs", { name: me.display_name });
     refreshStatus();
   }
 
   function setupLangSelect() {
     const sel = $("lang");
-    for (const [code, name] of Object.entries(LANGS)) sel.add(new Option(name, code));
+    for (const [c, name] of Object.entries(LANGS)) sel.add(new Option(name, c));
     sel.addEventListener("change", () => {
       lang = sel.value;
       safeSet("hostytalk.lang", lang);
@@ -120,18 +138,87 @@
     });
   }
 
+  // --- hesap -----------------------------------------------------------------
+
+  async function api(path, options = {}) {
+    const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
+    if (token) headers.Authorization = `Bearer ${token}`;
+    const r = await fetch(path, { ...options, headers });
+    let body = null;
+    try { body = await r.json(); } catch { /* boş yanıt */ }
+    if (!r.ok) throw Object.assign(new Error((body && body.detail) || `http_${r.status}`), { status: r.status });
+    return body;
+  }
+
+  function renderAuth() {
+    $("authTitle").textContent = registerMode ? t("register") : t("signIn");
+    $("authSubmit").textContent = registerMode ? t("register") : t("signIn");
+    $("authToggle").textContent = registerMode ? t("haveAccount") : t("noAccount");
+    $("displayName").classList.toggle("hidden", !registerMode);
+    $("displayName").required = registerMode;
+    $("password").autocomplete = registerMode ? "new-password" : "current-password";
+  }
+
+  function showSignedIn() {
+    $("authForm").classList.add("hidden");
+    $("signedInAs").textContent = t("signedInAs", { name: me.display_name });
+    $("welcome").classList.remove("hidden");
+  }
+
+  function showAuth() {
+    $("welcome").classList.add("hidden");
+    $("authForm").classList.remove("hidden");
+    renderAuth();
+  }
+
+  async function submitAuth(e) {
+    e.preventDefault();
+    const err = $("authError");
+    err.classList.add("hidden");
+    const body = { email: $("email").value.trim(), password: $("password").value };
+    if (registerMode) body.display_name = $("displayName").value.trim();
+    try {
+      const r = await api(registerMode ? "/api/auth/register" : "/api/auth/login",
+        { method: "POST", body: JSON.stringify(body) });
+      token = r.token;
+      me = r.user;
+      safeSet("hostytalk.token", token);
+      $("password").value = "";
+      showSignedIn();
+    } catch (ex) {
+      err.textContent = ex.message === "invalid_credentials" ? t("errCredentials")
+        : ex.message === "email_taken" ? t("errTaken") : t("error");
+      err.classList.remove("hidden");
+    }
+  }
+
+  function logout() {
+    token = null;
+    me = null;
+    safeSet("hostytalk.token", null);
+    showAuth();
+  }
+
   // --- bağlantı -------------------------------------------------------------
 
-  async function checkSession() {
-    const r = await fetch(`/api/sessions/${encodeURIComponent(sessionId)}/public?k=${encodeURIComponent(joinKey)}`);
-    if (!r.ok) return null;
-    return r.json();
+  async function join() {
+    try {
+      session = await api("/api/sessions/join", { method: "POST", body: JSON.stringify({ code, lang }) });
+    } catch (ex) {
+      if (ex.status === 401) return logout();
+      return showClosed(ex.message === "session_full" ? t("full") : t("expired"));
+    }
+    $("invite").classList.add("hidden");
+    $("welcome").classList.add("hidden");
+    $("controls").classList.remove("hidden");
+    connect();
+    refreshStatus();
   }
 
   function connect() {
     const proto = location.protocol === "https:" ? "wss" : "ws";
-    const q = new URLSearchParams({ role: "guest", k: joinKey, lang });
-    ws = new WebSocket(`${proto}://${location.host}/ws/${encodeURIComponent(sessionId)}?${q}`);
+    const q = new URLSearchParams({ role: "guest", token });
+    ws = new WebSocket(`${proto}://${location.host}/ws/${encodeURIComponent(session.id)}?${q}`);
     ws.binaryType = "arraybuffer";
     ws.onmessage = (e) => handle(JSON.parse(e.data));
     ws.onclose = (e) => {
@@ -152,7 +239,7 @@
   function handle(m) {
     switch (m.type) {
       case "state":
-        merchantLang = m.merchant_lang;
+        session = { ...session, ...m };
         if (m.guest_lang && m.guest_lang !== lang && LANGS[m.guest_lang]) {
           lang = m.guest_lang; // sunucu konuşmadan farklı bir dil algıladı
           applyLang();
@@ -168,152 +255,40 @@
         addBubble(m);
         if (m.audio_b64) play(m.audio_b64); else refreshStatus();
         break;
-      case "price": showPrice(m); break;
-      case "offer": upsertOffer(m); break;
       case "summary": showSummary(m.texts); break;
       case "error":
         busy = false; notice = t("error"); refreshStatus(); break;
       case "ended":
-        ended = true; stopTurn(false); showClosed(t("ended"), true); showSaveLink(m.share_url); break;
+        ended = true; stopTurn(false); showClosed(t("ended"), true); break;
     }
   }
 
   // --- arayüz ----------------------------------------------------------------
 
+  function el(tag, cls, text) {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) { e.textContent = text; e.dir = "auto"; }
+    return e;
+  }
+
   function addBubble(m) {
     const mine = m.from === "guest";
-    const li = document.createElement("li");
-    li.className = `bubble ${mine ? "mine" : "theirs"}`;
-    const main = document.createElement("div");
-    main.className = "main";
-    // Turist her zaman kendi dilindeki metni büyük görür.
-    main.textContent = mine ? m.original : m.translated;
-    main.dir = "auto";
-    const sub = document.createElement("div");
-    sub.className = "sub";
-    sub.textContent = mine ? m.translated : m.original;
-    sub.dir = "auto";
-    li.append(main, sub);
+    const li = el("li", `bubble ${mine ? "mine" : "theirs"}`);
+    // Herkes kendi dilindeki metni büyük görür.
+    li.append(el("div", "main", mine ? m.original : m.translated), el("div", "sub", mine ? m.translated : m.original));
     $("transcript").append(li);
     li.scrollIntoView({ behavior: "smooth", block: "end" });
   }
 
-  function money(v, c) {
-    return `${Number(v).toLocaleString(lang, { maximumFractionDigits: 2 })} ${CURRENCY_SYMBOL[c] || c}`;
-  }
-
-  function showPrice(m) {
-    const box = $("price");
-    box.replaceChildren();
-    const title = document.createElement("div");
-    title.className = "hint";
-    title.textContent = t("price");
-    const amount = document.createElement("div");
-    amount.className = "amount";
-    amount.textContent = money(m.amount, m.currency);
-    const others = document.createElement("div");
-    others.className = "others";
-    for (const [c, v] of Object.entries(m.conversions)) {
-      if (c === m.currency) continue;
-      const span = document.createElement("span");
-      span.textContent = `≈ ${money(v, c)}`;
-      others.append(span);
-    }
-    box.append(title, amount, others);
-    box.classList.remove("hidden");
-  }
-
   function showSummary(texts) {
     const box = $("summary");
-    box.replaceChildren();
-    const h = document.createElement("h3");
-    h.textContent = t("summary");
-    const p = document.createElement("p");
-    p.dir = "auto";
-    p.textContent = texts[lang] || Object.values(texts).pop() || "";
-    box.append(h, p);
+    box.replaceChildren(el("h3", null, t("summary")), el("p", null, texts[lang] || Object.values(texts).pop() || ""));
     box.classList.remove("hidden");
-  }
-
-  // --- pazarlık ---------------------------------------------------------------
-
-  const offers = new Map(); // id -> teklif
-
-  function upsertOffer(o) {
-    offers.set(o.id, o);
-    renderOffers();
-    const card = document.querySelector(`[data-offer="${o.id}"]`);
-    if (card && o.status === "open") card.scrollIntoView({ behavior: "smooth", block: "center" });
-  }
-
-  function renderOffers() {
-    const box = $("offers");
-    if (!box) return;
-    box.replaceChildren();
-    let openFromHost = null;
-    for (const o of offers.values()) {
-      const mine = o.by === "guest";
-      const card = el("div", `card offer ${o.status}`);
-      card.dataset.offer = o.id;
-      card.append(el("div", "hint", mine ? t("myOffer") : t("hostOffer")));
-      card.append(el("div", "amount", money(o.amount, o.currency)));
-      const others = el("div", "others");
-      // Turist önce kendi para birimini görsün diye TL'yi sona koy.
-      const entries = Object.entries(o.conversions).filter(([c]) => c !== o.currency)
-        .sort(([a], [b]) => (a === "TRY") - (b === "TRY"));
-      for (const [c, v] of entries) others.append(el("span", null, `≈ ${money(v, c)}`));
-      card.append(others);
-
-      if (o.status === "open" && !mine) {
-        openFromHost = o;
-        const buttons = el("div", "buttons");
-        const accept = el("button", "accept", t("accept"));
-        accept.type = "button";
-        accept.onclick = () => send({ type: "offer_reply", offer_id: o.id, accept: true });
-        const counter = el("button", null, t("counter"));
-        counter.type = "button";
-        counter.onclick = () => openCounter(o);
-        buttons.append(accept, counter);
-        card.append(buttons);
-      } else if (o.status === "open") {
-        card.append(el("div", "badge", t("waitingReply")));
-      } else {
-        card.append(el("div", "badge", t(`st_${o.status}`)));
-      }
-      box.append(card);
-    }
-    if (!openFromHost) $("counterForm").classList.add("hidden");
-  }
-
-  function openCounter(o) {
-    const form = $("counterForm");
-    // Turistin kendi para birimi: teklif TL ise euro önerelim.
-    $("counterCurrency").value = o.currency === "TRY" ? "EUR" : o.currency;
-    $("counterAmount").value = "";
-    form.classList.remove("hidden");
-    form.scrollIntoView({ behavior: "smooth", block: "center" });
-    $("counterAmount").focus();
-  }
-
-  function el(tag, cls, text) {
-    const e = document.createElement(tag);
-    if (cls) e.className = cls;
-    if (text != null) e.textContent = text;
-    return e;
-  }
-
-  function showSaveLink(url) {
-    if (!url) return;
-    const a = el("a", "primary saveLink", t("saveSummary"));
-    a.href = url;
-    a.target = "_blank";
-    a.rel = "noopener";
-    $("closed").append(a);
   }
 
   function showClosed(text, keepTranscript = false) {
-    $("welcome").classList.add("hidden");
-    $("controls").classList.add("hidden");
+    for (const id of ["invite", "authForm", "welcome", "controls"]) $(id).classList.add("hidden");
     $("closedText").textContent = text;
     $("closed").classList.remove("hidden");
     if (!keepTranscript) $("transcript").replaceChildren();
@@ -322,7 +297,7 @@
   function setStatus(s) { $("status").textContent = s; }
 
   function refreshStatus() {
-    if (ended) return;
+    if (ended || !session) return;
     const mic = $("mic");
     mic.classList.toggle("on", !!turn);
     mic.classList.toggle("hearing", inSpeech);
@@ -335,7 +310,7 @@
     else if (playing) s = t("playing");
     else if (!micAvailable) s = t("noMic");
     else if (notice) s = notice;
-    else if (merchantLang && merchantLang === lang) s = t("sameLang");
+    else if (session.host_lang && session.host_lang === lang) s = t("sameLang");
     else s = t("tapToSpeak");
     setStatus(s);
   }
@@ -363,7 +338,6 @@
 
   // --- mikrofon: tek konuşmalık tur -----------------------------------------
   // Dokununca açılır; konuşma bitince (kısa sessizlik) kendiliğinden kapanır ve gönderilir.
-  // Hiç konuşulmazsa bir süre sonra boşuna açık kalmaz.
 
   const TARGET_RATE = 16000;
   const FRAME_MS = 30;
@@ -515,31 +489,33 @@
   async function init() {
     setupLangSelect();
     applyLang();
-    const info = await checkSession().catch(() => null);
-    if (!info) return showClosed(t("expired"));
-    $("business").textContent = info.business_name;
-    merchantLang = info.merchant_lang;
+
+    try {
+      invite = await api(`/api/sessions/code/${encodeURIComponent(code)}`);
+    } catch {
+      return showClosed(t("expired"));
+    }
+    $("inviteText").textContent = t("invite", { name: invite.host_name });
+
+    if (token) {
+      try { me = await api("/api/me"); } catch { token = null; safeSet("hostytalk.token", null); }
+    }
+    me ? showSignedIn() : showAuth();
+
+    $("authForm").addEventListener("submit", submitAuth);
+    $("authToggle").addEventListener("click", () => { registerMode = !registerMode; renderAuth(); });
+    $("logout").addEventListener("click", logout);
 
     $("start").addEventListener("click", () => {
       // iOS: ses çalma ve ses motoru kullanıcı dokunuşuyla açılmalı.
       ensureAudioContext();
       player.src = URL.createObjectURL(new Blob([encodeWav(new Float32Array(1600))], { type: "audio/wav" }));
       player.play().catch(() => {});
-      $("welcome").classList.add("hidden");
-      $("controls").classList.remove("hidden");
-      connect();
-      refreshStatus();
+      join();
     });
 
     // Açıkken dokunmak: konuşmayı hemen bitirip gönderir.
     $("mic").addEventListener("click", () => (turn ? stopTurn(true) : startTurn()));
-    $("counterForm").addEventListener("submit", (e) => {
-      e.preventDefault();
-      const amount = parseFloat($("counterAmount").value.replace(",", "."));
-      if (!(amount > 0)) return;
-      send({ type: "offer", amount, currency: $("counterCurrency").value });
-      $("counterForm").classList.add("hidden");
-    });
     $("textForm").addEventListener("submit", (e) => {
       e.preventDefault();
       const text = $("textInput").value.trim();

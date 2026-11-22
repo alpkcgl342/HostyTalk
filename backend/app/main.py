@@ -5,15 +5,15 @@ import logging
 import time
 from pathlib import Path
 
-from fastapi import Depends, FastAPI, HTTPException, Query, WebSocket, WebSocketDisconnect
+from fastapi import Depends, FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr, Field
 
-from . import ai, auth, currency, db, languages, phrases
+from . import ai, auth, db, languages
 from .config import settings
-from .sessions import GUEST, MERCHANT, manager, share_url, summary_lines
+from .sessions import GUEST, HOST, ROLES, Session, manager, summary_lines
 
 logging.basicConfig(level=logging.INFO)
 STATIC = Path(__file__).parent / "static"
@@ -43,8 +43,7 @@ app.mount("/static", StaticFiles(directory=STATIC), name="static")
 class RegisterIn(BaseModel):
     email: EmailStr
     password: str = Field(min_length=6, max_length=128)
-    business_name: str = Field(min_length=1, max_length=100)
-    business_type: str = "other"
+    display_name: str = Field(min_length=1, max_length=60)
 
 
 class LoginIn(BaseModel):
@@ -53,35 +52,41 @@ class LoginIn(BaseModel):
 
 
 class MeIn(BaseModel):
-    business_name: str | None = Field(default=None, min_length=1, max_length=100)
-    business_type: str | None = None
+    display_name: str = Field(min_length=1, max_length=60)
 
 
 class SessionIn(BaseModel):
-    merchant_lang: str = "tr"
-
-
-class PhraseIn(BaseModel):
-    text: str = Field(min_length=1, max_length=300)
     lang: str = "tr"
 
 
-def valid_business_type(value: str | None) -> str | None:
-    if value is not None and value not in phrases.BUSINESS_TYPES:
-        raise HTTPException(422, "invalid_business_type")
-    return value
+class JoinIn(BaseModel):
+    code: str = Field(min_length=4, max_length=12)
+    lang: str = "en"
 
 
-def merchant_out(m) -> dict:
-    used = db.used_seconds(m["id"])
+def user_out(u) -> dict:
+    used = db.used_seconds(u["id"])
     return {
-        "id": m["id"],
-        "email": m["email"],
-        "business_name": m["business_name"],
-        "business_type": m["business_type"],
-        "plan": m["plan"],
+        "id": u["id"],
+        "email": u["email"],
+        "display_name": u["display_name"],
+        "plan": u["plan"],
         "used_minutes": round(used / 60, 1),
         "quota_minutes": settings.trial_minutes,
+    }
+
+
+def session_out(s: Session, role: str) -> dict:
+    return {
+        "id": s.id,
+        "role": role,
+        "code": s.code,
+        "join_url": s.join_url,
+        "join_expires_at": int(s.join_expires_at),
+        "host_name": s.host_name,
+        "host_lang": s.host_lang,
+        "guest_name": s.guest_name,
+        "guest_lang": s.guest_lang,
     }
 
 
@@ -100,147 +105,132 @@ def list_languages():
 @app.post("/api/auth/register")
 def register(body: RegisterIn):
     email = body.email.lower()
-    if db.get_merchant_by_email(email):
+    if db.get_user_by_email(email):
         raise HTTPException(409, "email_taken")
-    business_type = valid_business_type(body.business_type)
-    mid = db.create_merchant(email, auth.hash_password(body.password), body.business_name.strip(), business_type)
-    return {"token": auth.create_token(mid), "merchant": merchant_out(db.get_merchant(mid))}
+    uid = db.create_user(email, auth.hash_password(body.password), body.display_name.strip())
+    return {"token": auth.create_token(uid), "user": user_out(db.get_user(uid))}
 
 
 @app.post("/api/auth/login")
 def login(body: LoginIn):
-    m = db.get_merchant_by_email(body.email.lower())
-    if m is None or not auth.verify_password(body.password, m["password_hash"]):
+    u = db.get_user_by_email(body.email.lower())
+    if u is None or not auth.verify_password(body.password, u["password_hash"]):
         raise HTTPException(401, "invalid_credentials")
-    return {"token": auth.create_token(m["id"]), "merchant": merchant_out(m)}
+    return {"token": auth.create_token(u["id"]), "user": user_out(u)}
 
 
 @app.get("/api/me")
-def me(m=Depends(auth.current_merchant)):
-    return merchant_out(m)
+def me(u=Depends(auth.current_user)):
+    return user_out(u)
 
 
 @app.patch("/api/me")
-def update_me(body: MeIn, m=Depends(auth.current_merchant)):
-    db.update_merchant(
-        m["id"],
-        business_name=body.business_name.strip() if body.business_name else None,
-        business_type=valid_business_type(body.business_type),
-    )
-    return merchant_out(db.get_merchant(m["id"]))
+def update_me(body: MeIn, u=Depends(auth.current_user)):
+    db.update_display_name(u["id"], body.display_name.strip())
+    return user_out(db.get_user(u["id"]))
 
 
-# --- hazır cümleler -----------------------------------------------------------
+# --- oturum: başlat / katıl -------------------------------------------------
 
-@app.get("/api/phrases")
-def list_phrases(lang: str = "tr", m=Depends(auth.current_merchant)):
-    lang = languages.normalize(lang, default="tr")
-    return {
-        "business_type": m["business_type"],
-        "custom": [{"id": r["id"], "text": r["text"]} for r in db.list_phrases(m["id"], lang)],
-        "defaults": phrases.defaults(m["business_type"], lang),
-    }
-
-
-@app.post("/api/phrases")
-def add_phrase(body: PhraseIn, m=Depends(auth.current_merchant)):
+@app.post("/api/sessions")
+def create_session(body: SessionIn, u=Depends(auth.current_user)):
     lang = languages.normalize(body.lang, default="tr")
-    pid = db.add_phrase(m["id"], lang, body.text.strip())
-    return {"id": pid, "text": body.text.strip()}
+    s = manager.create(u["id"], u["display_name"], lang)
+    return session_out(s, HOST)
 
 
-@app.delete("/api/phrases/{phrase_id}")
-def delete_phrase(phrase_id: int, m=Depends(auth.current_merchant)):
-    if not db.delete_phrase(m["id"], phrase_id):
-        raise HTTPException(404, "not_found")
-    return {"ok": True}
+@app.get("/api/sessions/code/{code}")
+def session_by_code(code: str):
+    """Katılım sayfası giriş yapmadan önce kimin davet ettiğini gösterebilsin diye."""
+    s = manager.by_code(code)
+    if s is None or (s.guest_id is None and s.join_expires_at < time.time()):
+        raise HTTPException(404, "session_not_found")
+    return {"host_name": s.host_name, "host_lang": s.host_lang}
+
+
+@app.post("/api/sessions/join")
+def join_session(body: JoinIn, u=Depends(auth.current_user)):
+    s = manager.by_code(body.code)
+    if s is None:
+        raise HTTPException(404, "session_not_found")
+    if not s.claim_guest(u["id"], u["display_name"], body.lang):
+        raise HTTPException(409, "session_full")
+    return session_out(s, GUEST)
 
 
 # --- konuşma geçmişi ----------------------------------------------------------
 
-def own_conversation(conversation_id: int, m) -> dict:
+def my_role(conv: dict, user_id: int) -> str | None:
+    if conv["host_id"] == user_id and not conv.get("host_deleted"):
+        return HOST
+    if conv["guest_id"] == user_id and not conv.get("guest_deleted"):
+        return GUEST
+    return None
+
+
+def conversation_out(conv: dict, user_id: int) -> dict:
+    """Konuşmayı isteyen kişinin gözünden döndürür: kendi dili, karşı tarafın adı ve dili."""
+    role = HOST if conv["host_id"] == user_id else GUEST
+    other = GUEST if role == HOST else HOST
+    out = {
+        "id": conv["id"],
+        "my_role": role,
+        "my_lang": conv[f"{role}_lang"],
+        "other_name": conv[f"{other}_name"],
+        "other_lang": conv[f"{other}_lang"],
+        "started_at": conv["started_at"],
+        "ended_at": conv["ended_at"],
+        "summary": conv["summary"],
+    }
+    if "message_count" in conv:
+        out["message_count"] = conv["message_count"]
+    if "messages" in conv:
+        out["messages"] = [{**m, "mine": m["from"] == role} for m in conv["messages"]]
+    return out
+
+
+def own_conversation(conversation_id: int, u) -> dict:
     conv = db.get_conversation(conversation_id)
-    if conv is None or conv["merchant_id"] != m["id"]:
+    if conv is None or my_role(conv, u["id"]) is None:
         raise HTTPException(404, "not_found")
     return conv
 
 
-def conversation_out(conv: dict) -> dict:
-    out = {k: v for k, v in conv.items() if k not in ("merchant_id", "share_key")}
-    return {**out, "share_url": share_url(conv["share_key"])}
-
-
 @app.get("/api/conversations")
-def list_conversations(m=Depends(auth.current_merchant)):
-    return [conversation_out(c) for c in db.list_conversations(m["id"])]
+def list_conversations(u=Depends(auth.current_user)):
+    return [conversation_out(c, u["id"]) for c in db.list_conversations(u["id"])]
 
 
 @app.get("/api/conversations/{conversation_id}")
-def get_conversation(conversation_id: int, m=Depends(auth.current_merchant)):
-    return conversation_out(own_conversation(conversation_id, m))
+def get_conversation(conversation_id: int, u=Depends(auth.current_user)):
+    return conversation_out(own_conversation(conversation_id, u), u["id"])
 
 
 @app.post("/api/conversations/{conversation_id}/summary")
-async def summarize_conversation(conversation_id: int, m=Depends(auth.current_merchant)):
+async def summarize_conversation(conversation_id: int, u=Depends(auth.current_user)):
     """Özetsiz bitirilen bir konuşmanın özetini sonradan oluşturur."""
-    conv = own_conversation(conversation_id, m)
-    if not conv["messages"] and not conv["offers"]:
+    conv = own_conversation(conversation_id, u)
+    if not conv["messages"]:
         raise HTTPException(400, "empty_conversation")
-    summary = await ai.summarize(
-        summary_lines(conv["messages"], conv["offers"]), conv["merchant_lang"], conv["guest_lang"]
-    )
+    names = {HOST: conv["host_name"], GUEST: conv["guest_name"]}
+    summary = await ai.summarize(summary_lines(conv["messages"], names), conv["host_lang"], conv["guest_lang"])
     db.update_conversation(conversation_id, summary=summary)
-    return conversation_out(db.get_conversation(conversation_id))
+    return conversation_out(db.get_conversation(conversation_id), u["id"])
 
 
 @app.delete("/api/conversations/{conversation_id}")
-def delete_conversation(conversation_id: int, m=Depends(auth.current_merchant)):
-    own_conversation(conversation_id, m)
-    db.delete_conversation(m["id"], conversation_id)
+def delete_conversation(conversation_id: int, u=Depends(auth.current_user)):
+    """Yalnızca isteyen kişinin geçmişinden kaldırır; karşı tarafın kaydı durur."""
+    own_conversation(conversation_id, u)
+    db.hide_conversation(conversation_id, u["id"])
     return {"ok": True}
 
 
-@app.get("/api/share/{share_key}")
-def shared_conversation(share_key: str):
-    """Turistin saklayabildiği özet sayfasının verisi (bağlantıyı bilen görür)."""
-    conv = db.get_conversation_by_share_key(share_key)
-    if conv is None:
-        raise HTTPException(404, "not_found")
-    merchant = db.get_merchant(conv["merchant_id"])
-    out = {k: v for k, v in conv.items() if k not in ("merchant_id", "share_key", "id")}
-    return {**out, "business_name": merchant["business_name"] if merchant else ""}
+# --- web katılım sayfası (QR ile açılır) --------------------------------------
 
-
-@app.post("/api/sessions")
-def create_session(body: SessionIn, m=Depends(auth.current_merchant)):
-    lang = languages.normalize(body.merchant_lang, default="tr")
-    s = manager.create(m["id"], m["business_name"], lang)
-    return {"id": s.id, "join_url": s.join_url, "join_expires_at": int(s.join_expires_at), "merchant_lang": lang}
-
-
-@app.get("/api/sessions/{session_id}/public")
-def session_public(session_id: str, k: str):
-    s = manager.get(session_id)
-    if s is None or s.join_key != k or time.time() > s.join_expires_at:
-        raise HTTPException(404, "session_not_found")
-    return {"business_name": s.business_name, "merchant_lang": s.merchant_lang, "languages": list_languages()}
-
-
-@app.get("/api/currency")
-async def convert_currency(amount: float, currency_code: str = Query("TRY", alias="currency")):
-    if currency_code not in currency.CURRENCIES:
-        raise HTTPException(400, "unsupported_currency")
-    return {"amount": amount, "currency": currency_code, "conversions": await currency.convert(amount, currency_code)}
-
-
-@app.get("/g/{session_id}")
-def guest_page(session_id: str):
+@app.get("/j/{code}")
+def join_page(code: str):
     return FileResponse(STATIC / "guest" / "index.html")
-
-
-@app.get("/s/{share_key}")
-def share_page(share_key: str):
-    return FileResponse(STATIC / "guest" / "share.html")
 
 
 # --- WebSocket --------------------------------------------------------------
@@ -253,38 +243,22 @@ async def reject(ws: WebSocket, code: int) -> None:
 
 
 @app.websocket("/ws/{session_id}")
-async def conversation_ws(
-    ws: WebSocket,
-    session_id: str,
-    role: str,
-    token: str | None = None,
-    k: str | None = None,
-    lang: str | None = None,
-):
+async def conversation_ws(ws: WebSocket, session_id: str, role: str, token: str | None = None):
     s = manager.get(session_id)
     if s is None:
         await reject(ws, 4404)
         return
-    if role == MERCHANT:
-        if auth.merchant_id_from_token(token or "") != s.merchant_id:
-            await reject(ws, 4401)
-            return
-    elif role == GUEST:
-        # QR yalnızca kendi oturumu için ve kısa süre geçerli.
-        if k != s.join_key or time.time() > s.join_expires_at:
-            await reject(ws, 4403)
-            return
-    else:
+    if role not in ROLES:
         await reject(ws, 4400)
+        return
+    # İki taraf da hesabıyla bağlanır; katılımcı önce /api/sessions/join ile yerini almış olmalı.
+    user_id = auth.user_id_from_token(token or "")
+    if user_id is None or user_id != s.user_of(role):
+        await reject(ws, 4401)
         return
 
     await ws.accept()
-    if role == MERCHANT:
-        s.merchant_ws = ws
-    else:
-        s.guest_ws.add(ws)
-        if lang:
-            s.guest_lang = languages.normalize(lang, default="en")
+    s.sockets_by_role[role].add(ws)
     await s.broadcast(s.state())
 
     try:
@@ -302,26 +276,11 @@ async def conversation_ws(
             kind = data.get("type")
             if kind == "text":
                 asyncio.create_task(s.handle_text(role, str(data.get("text", ""))))
-            elif kind == "set_lang" and role == GUEST:
-                await s.handle_set_guest_lang(str(data.get("lang", "")))
-            elif kind in ("price", "offer"):
-                try:
-                    amount = float(data.get("amount", 0))
-                except (TypeError, ValueError):
-                    continue
-                cur = str(data.get("currency", "TRY"))
-                if kind == "offer":
-                    await s.handle_offer(role, amount, cur)  # pazarlık: iki taraf da teklif verebilir
-                elif role == MERCHANT:
-                    await s.handle_price(amount, cur)
-            elif kind == "offer_reply":
-                try:
-                    offer_id = int(data.get("offer_id", 0))
-                except (TypeError, ValueError):
-                    continue
-                await s.handle_offer_reply(role, offer_id, bool(data.get("accept")))
-            elif kind == "end" and role == MERCHANT:
-                await s.end(with_summary=bool(data.get("summary", True)))
+            elif kind == "set_lang":
+                await s.set_lang(role, str(data.get("lang", "")))
+            elif kind == "end":
+                # Konuşmayı iki taraftan biri bitirebilir.
+                await s.end(by=role, with_summary=bool(data.get("summary", True)))
                 manager.remove(s.id)
                 return
             elif kind == "ping":
@@ -329,8 +288,6 @@ async def conversation_ws(
     except WebSocketDisconnect:
         pass
     finally:
-        if role == MERCHANT and s.merchant_ws is ws:
-            s.merchant_ws = None
-        s.guest_ws.discard(ws)
+        s.sockets_by_role[role].discard(ws)
         if manager.get(s.id):
             await s.broadcast(s.state())

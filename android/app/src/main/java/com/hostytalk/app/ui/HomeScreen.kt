@@ -32,20 +32,20 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.hostytalk.app.R
-import com.hostytalk.app.data.NewSession
+import com.hostytalk.app.data.LiveSession
 
 @Composable
 fun HomeScreen(
-    onStarted: (NewSession) -> Unit,
+    onOpen: (LiveSession) -> Unit,
     onLogout: () -> Unit,
-    onPhrases: () -> Unit,
     onHistory: () -> Unit,
     vm: HomeViewModel = viewModel(),
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
-    val merchantLang by vm.merchantLang.collectAsStateWithLifecycle()
+    val myLang by vm.myLang.collectAsStateWithLifecycle()
     val serverUrl by vm.serverUrl.collectAsStateWithLifecycle()
     var serverDialog by rememberSaveable { mutableStateOf(false) }
+    var joinDialog by rememberSaveable { mutableStateOf(false) }
 
     Scaffold { padding ->
         Column(
@@ -61,53 +61,53 @@ fun HomeScreen(
                 TextButton(onClick = onLogout) { Text(stringResource(R.string.logout)) }
             }
 
-            state.merchant?.let { m ->
-                Text(stringResource(R.string.welcome_fmt, m.businessName), style = MaterialTheme.typography.titleLarge)
+            state.user?.let { u ->
+                Text(stringResource(R.string.welcome_fmt, u.displayName), style = MaterialTheme.typography.titleLarge)
                 Card(Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(stringResource(R.string.usage_fmt, m.usedMinutes.toString(), m.quotaMinutes))
+                        Text(stringResource(R.string.usage_fmt, u.usedMinutes.toString(), u.quotaMinutes))
                         LinearProgressIndicator(
-                            progress = { (m.usedMinutes / m.quotaMinutes).toFloat().coerceIn(0f, 1f) },
+                            progress = { (u.usedMinutes / u.quotaMinutes).toFloat().coerceIn(0f, 1f) },
                             modifier = Modifier.fillMaxWidth(),
                         )
                     }
                 }
             }
 
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(4.dp))
             Text(stringResource(R.string.i_speak_hint), style = MaterialTheme.typography.bodyMedium)
-            LanguagePicker(stringResource(R.string.i_speak), merchantLang, vm::setMerchantLang)
+            LanguagePicker(stringResource(R.string.i_speak), myLang, vm::setMyLang)
 
             Button(
-                onClick = { vm.start(onStarted) },
-                enabled = !state.starting,
+                onClick = { vm.start(onOpen) },
+                enabled = !state.busy,
                 modifier = Modifier.fillMaxWidth().height(72.dp),
             ) {
-                if (state.starting) CircularProgressIndicator(Modifier.height(24.dp))
+                if (state.busy) CircularProgressIndicator(Modifier.height(24.dp))
                 else Text(stringResource(R.string.new_conversation), fontSize = 20.sp)
             }
+            OutlinedButton(
+                onClick = { vm.clearError(); joinDialog = true },
+                enabled = !state.busy,
+                modifier = Modifier.fillMaxWidth().height(60.dp),
+            ) { Text(stringResource(R.string.join_conversation), fontSize = 18.sp) }
             Text(stringResource(R.string.new_conversation_hint), style = MaterialTheme.typography.bodySmall)
-
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedButton(onClick = onHistory, modifier = Modifier.weight(1f).height(56.dp)) {
-                    Text("🕘 ${stringResource(R.string.history)}")
-                }
-                OutlinedButton(onClick = onPhrases, modifier = Modifier.weight(1f).height(56.dp)) {
-                    Text("💬 ${stringResource(R.string.my_phrases)}")
-                }
-            }
-            state.merchant?.let { m -> BusinessTypePicker(m.businessType, vm::setBusinessType) }
 
             state.error?.let {
                 Text(errorText(it), color = MaterialTheme.colorScheme.error)
-                TextButton(onClick = { vm.refresh() }) { Text(stringResource(R.string.retry)) }
+                if (it == "network") TextButton(onClick = { vm.refresh() }) { Text(stringResource(R.string.retry)) }
             }
 
-            Spacer(Modifier.height(16.dp))
+            OutlinedButton(onClick = onHistory, modifier = Modifier.fillMaxWidth().height(56.dp)) {
+                Text("🕘 ${stringResource(R.string.history)}")
+            }
+
+            Spacer(Modifier.height(8.dp))
             AppLanguagePicker()
             TextButton(onClick = { serverDialog = true }) { Text("⚙ ${stringResource(R.string.server_url)}") }
         }
     }
 
     if (serverDialog) ServerUrlDialog(serverUrl, vm::setServerUrl) { serverDialog = false }
+    if (joinDialog) JoinDialog(onJoin = { vm.join(it, onOpen) }) { joinDialog = false }
 }

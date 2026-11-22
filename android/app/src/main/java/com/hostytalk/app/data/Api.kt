@@ -9,8 +9,6 @@ import io.ktor.client.plugins.websocket.WebSockets
 import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.delete
 import io.ktor.client.request.get
-import io.ktor.client.request.parameter
-import io.ktor.client.request.patch
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
@@ -27,95 +25,75 @@ import kotlinx.serialization.json.jsonPrimitive
 val AppJson = Json { ignoreUnknownKeys = true; explicitNulls = false }
 
 @Serializable
-data class Merchant(
+data class User(
     val id: Int,
     val email: String,
-    @SerialName("business_name") val businessName: String,
-    @SerialName("business_type") val businessType: String = "other",
+    @SerialName("display_name") val displayName: String,
     val plan: String,
     @SerialName("used_minutes") val usedMinutes: Double,
     @SerialName("quota_minutes") val quotaMinutes: Int,
 )
 
 @Serializable
-data class AuthResponse(val token: String, val merchant: Merchant)
+data class AuthResponse(val token: String, val user: User)
 
+/** Başlatılan ya da katılınan canlı konuşma. role: "host" (başlatan) | "guest" (katılan). */
 @Serializable
-data class NewSession(
+data class LiveSession(
     val id: String,
+    val role: String,
+    val code: String,
     @SerialName("join_url") val joinUrl: String,
     @SerialName("join_expires_at") val joinExpiresAt: Long,
-    @SerialName("merchant_lang") val merchantLang: String,
-)
-
-@Serializable
-data class CustomPhrase(val id: Int, val text: String)
-
-@Serializable
-data class PhraseList(
-    @SerialName("business_type") val businessType: String,
-    val custom: List<CustomPhrase>,
-    val defaults: List<String>,
-)
-
-/** Pazarlık teklifi; status: open | accepted | rejected | countered. */
-@Serializable
-data class Offer(
-    val id: Int,
-    val by: String,
-    val amount: Double,
-    val currency: String,
-    val conversions: Map<String, Double> = emptyMap(),
-    val status: String,
-)
+    @SerialName("host_name") val hostName: String,
+    @SerialName("host_lang") val hostLang: String,
+    @SerialName("guest_name") val guestName: String = "",
+    @SerialName("guest_lang") val guestLang: String = "en",
+) {
+    val isHost get() = role == "host"
+}
 
 @Serializable
 data class HistoryMessage(
     val id: Int,
-    val from: String,
+    val mine: Boolean,
     @SerialName("source_lang") val sourceLang: String,
     @SerialName("target_lang") val targetLang: String,
     val original: String,
     val translated: String,
 )
 
+/** Geçmişteki bir konuşma, isteyen kişinin gözünden (kendi dili, karşı tarafın adı ve dili). */
 @Serializable
 data class Conversation(
     val id: Int,
-    @SerialName("merchant_lang") val merchantLang: String,
-    @SerialName("guest_lang") val guestLang: String,
+    @SerialName("my_lang") val myLang: String,
+    @SerialName("other_name") val otherName: String,
+    @SerialName("other_lang") val otherLang: String,
     @SerialName("started_at") val startedAt: Long,
     @SerialName("ended_at") val endedAt: Long? = null,
     val summary: Map<String, String>? = null,
-    val offers: List<Offer> = emptyList(),
     val messages: List<HistoryMessage>? = null,
     @SerialName("message_count") val messageCount: Int? = null,
-    @SerialName("share_url") val shareUrl: String,
-) {
-    val agreed: Offer? get() = offers.lastOrNull { it.status == "accepted" }
-}
+)
 
 @Serializable
 private data class RegisterBody(
     val email: String,
     val password: String,
-    @SerialName("business_name") val businessName: String,
-    @SerialName("business_type") val businessType: String,
+    @SerialName("display_name") val displayName: String,
 )
 
 @Serializable
 private data class LoginBody(val email: String, val password: String)
 
 @Serializable
-private data class MeBody(@SerialName("business_type") val businessType: String)
+private data class StartBody(val lang: String)
 
 @Serializable
-private data class SessionBody(@SerialName("merchant_lang") val merchantLang: String)
+private data class JoinBody(val code: String, val lang: String)
 
-@Serializable
-private data class PhraseBody(val text: String, val lang: String)
-
-/** Sunucunun döndürdüğü hata kodu ("email_taken", "invalid_credentials"...). */
+/** Sunucunun döndürdüğü hata kodu ("email_taken", "session_full"...). */
 class ApiException(val code: String, val status: Int) : Exception(code)
 
 class Api(private val prefs: Prefs) {
@@ -141,10 +119,10 @@ class Api(private val prefs: Prefs) {
         throw ApiException(code ?: "http_${status.value}", status.value)
     }
 
-    suspend fun register(email: String, password: String, businessName: String, businessType: String): AuthResponse =
+    suspend fun register(email: String, password: String, displayName: String): AuthResponse =
         http.post("${base()}/api/auth/register") {
             contentType(ContentType.Application.Json)
-            setBody(RegisterBody(email, password, businessName, businessType))
+            setBody(RegisterBody(email, password, displayName))
         }.parse()
 
     suspend fun login(email: String, password: String): AuthResponse =
@@ -153,41 +131,27 @@ class Api(private val prefs: Prefs) {
             setBody(LoginBody(email, password))
         }.parse()
 
-    suspend fun me(): Merchant = http.get("${base()}/api/me") { bearerAuth(token()) }.parse()
+    suspend fun me(): User = http.get("${base()}/api/me") { bearerAuth(token()) }.parse()
 
-    suspend fun setBusinessType(type: String): Merchant =
-        http.patch("${base()}/api/me") {
-            bearerAuth(token())
-            contentType(ContentType.Application.Json)
-            setBody(MeBody(type))
-        }.parse()
+    // --- canlı konuşma ---
 
-    suspend fun createSession(merchantLang: String): NewSession =
+    suspend fun startSession(lang: String): LiveSession =
         http.post("${base()}/api/sessions") {
             bearerAuth(token())
             contentType(ContentType.Application.Json)
-            setBody(SessionBody(merchantLang))
+            setBody(StartBody(lang))
         }.parse()
 
-    suspend fun webSocketUrl(sessionId: String): String {
-        val wsBase = base().replaceFirst("https://", "wss://").replaceFirst("http://", "ws://")
-        return "$wsBase/ws/$sessionId?role=merchant&token=${token()}"
-    }
-
-    // --- hazır cümleler ---
-
-    suspend fun phrases(lang: String): PhraseList =
-        http.get("${base()}/api/phrases") { bearerAuth(token()); parameter("lang", lang) }.parse()
-
-    suspend fun addPhrase(text: String, lang: String): CustomPhrase =
-        http.post("${base()}/api/phrases") {
+    suspend fun joinSession(code: String, lang: String): LiveSession =
+        http.post("${base()}/api/sessions/join") {
             bearerAuth(token())
             contentType(ContentType.Application.Json)
-            setBody(PhraseBody(text, lang))
+            setBody(JoinBody(code.trim().uppercase(), lang))
         }.parse()
 
-    suspend fun deletePhrase(id: Int) {
-        http.delete("${base()}/api/phrases/$id") { bearerAuth(token()) }.parse<Map<String, Boolean>>()
+    suspend fun webSocketUrl(session: LiveSession): String {
+        val wsBase = base().replaceFirst("https://", "wss://").replaceFirst("http://", "ws://")
+        return "$wsBase/ws/${session.id}?role=${session.role}&token=${token()}"
     }
 
     // --- konuşma geçmişi ---
