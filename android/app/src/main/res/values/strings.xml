@@ -15,6 +15,7 @@
     <string name="passwords_dont_match">Passwords don\'t match.</string>
     <string name="password_changed">Your password has been changed. Use it next time you sign in.</string>
     <string name="ok">OK</string>
+    <string name="same_lang_warning">You both chose the same language, so nothing gets translated. If that\'s wrong, pick your language below. (It also switches automatically when you speak or type in another language.)</string>
     <string name="have_account">Already have an account? Sign in</string>
     <string name="no_account">New here? Create an account</string>
     <string name="server_url">Server address</string>

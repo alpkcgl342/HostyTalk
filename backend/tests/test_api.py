@@ -31,7 +31,12 @@ def make_wav(seconds: float) -> bytes:
 
 @pytest.fixture(autouse=True)
 def fake_ai(monkeypatch):
-    state = {"stt": ("Yarın saat üçte kütüphanede buluşalım.", "tr")}
+    state = {"stt": ("Yarın saat üçte kütüphanede buluşalım.", "tr"), "detect": {}}
+
+    async def detect_language(text):
+        return state["detect"].get(text)
+
+    monkeypatch.setattr(ai, "detect_language", detect_language)
 
     async def transcribe(wav, duration_hint):
         text, lang = state["stt"]
@@ -69,10 +74,11 @@ def auth(token):
     return {"Authorization": f"Bearer {token}"}
 
 
-def recv_until(ws, kind):
+def recv_until(ws, kind, **expected):
+    """[kind] türünde ve [expected] alanlarını taşıyan ilk mesajı bekler."""
     while True:
         m = ws.receive_json()
-        if m["type"] == kind:
+        if m["type"] == kind and all(m.get(k) == v for k, v in expected.items()):
             return m
 
 
@@ -207,6 +213,41 @@ def test_conversation(client, fake_ai):
     assert len(client.get("/api/conversations", headers=auth(guest)).json()) == 1
     client.delete(f"/api/conversations/{hl[0]['id']}", headers=auth(guest))
     assert db.get_conversation(hl[0]["id"]) is None
+
+
+def test_same_language_on_both_sides_gets_fixed(client, fake_ai):
+    """İki taraf da Türkçe seçmişken biri İngilizce yazar ya da konuşursa dili düzelir ve çeviri olur."""
+    host = register(client, "tr1@example.com", "Ali")
+    guest = register(client, "tr2@example.com", "John")
+    s = client.post("/api/sessions", json={"lang": "tr"}, headers=auth(host)).json()
+    client.post("/api/sessions/join", json={"code": s["code"], "lang": "tr"}, headers=auth(guest))
+
+    with client.websocket_connect(f"/ws/{s['id']}?role=host&token={host}") as h, \
+            client.websocket_connect(f"/ws/{s['id']}?role=guest&token={guest}") as g:
+        recv_until(h, "state")
+
+        # Yazılı İngilizce mesaj: katılanın dili en olur, Türkçeye çevrilir
+        fake_ai["detect"]["Hello, how are you?"] = "en"
+        g.send_json({"type": "text", "text": "Hello, how are you?"})
+        recv_until(h, "state", guest_lang="en")
+        m = recv_until(h, "message")
+        assert m["source_lang"] == "en" and m["translated"] == "[en->tr] Hello, how are you?"
+
+        # Başlatanın Türkçesi artık İngilizceye çevrilir
+        h.send_json({"type": "text", "text": "İyiyim, sen?"})
+        assert recv_until(g, "message")["translated"] == "[en->tr] Hello, how are you?"  # kendi mesajının kopyası
+        assert recv_until(g, "message")["translated"] == "[tr->en] İyiyim, sen?"
+
+    # Sesli mesajda da aynısı: ikisi de Türkçe kayıtlıyken İngilizce konuşulursa dil düzelir
+    s2 = client.post("/api/sessions", json={"lang": "tr"}, headers=auth(host)).json()
+    client.post("/api/sessions/join", json={"code": s2["code"], "lang": "tr"}, headers=auth(guest))
+    fake_ai["stt"] = ("See you tomorrow.", "en")
+    with client.websocket_connect(f"/ws/{s2['id']}?role=host&token={host}") as h, \
+            client.websocket_connect(f"/ws/{s2['id']}?role=guest&token={guest}") as g:
+        recv_until(h, "state")
+        g.send_bytes(make_wav(1.0))
+        recv_until(h, "state", guest_lang="en")
+        assert recv_until(h, "message")["translated"] == "[en->tr] See you tomorrow."
 
 
 def test_empty_conversation_not_saved(client):

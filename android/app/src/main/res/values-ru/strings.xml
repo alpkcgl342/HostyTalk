@@ -14,6 +14,7 @@
     <string name="passwords_dont_match">Пароли не совпадают.</string>
     <string name="password_changed">Пароль изменён. Используйте его при следующем входе.</string>
     <string name="ok">ОК</string>
+    <string name="same_lang_warning">Вы оба выбрали один язык, поэтому перевода нет. Если это ошибка, выберите свой язык ниже. (Он также меняется автоматически, если говорить или писать на другом языке.)</string>
     <string name="have_account">Уже есть аккаунт? Войдите</string>
     <string name="no_account">Впервые здесь? Создайте аккаунт</string>
     <string name="server_url">Адрес сервера</string>

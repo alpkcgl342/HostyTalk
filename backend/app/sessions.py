@@ -165,9 +165,11 @@ class Session:
         duyabilir. Bir telefondan karşı tarafın dili gelirse bu yankıdır, çevrilmez.
         Bir taraf başka bir dilde konuşmaya başlarsa o tarafın dili otomatik değişir.
         """
-        if detected is None or self.host_lang == self.guest_lang:
+        if detected is None:
             return True
-        if detected == self.lang_of(self.other(role)):
+        # Diller farklıyken karşı tarafın dili gelirse yankıdır. Diller aynıysa (ör. ikisi de
+        # yanlışlıkla Türkçe seçmiş) yankı ayırt edilemez; konuşma kabul edilir ve dil düzeltilir.
+        if self.host_lang != self.guest_lang and detected == self.lang_of(self.other(role)):
             return False
         if detected != self.lang_of(role) and languages.is_supported(detected):
             await self.set_lang(role, detected)
@@ -180,6 +182,10 @@ class Session:
         async with self.lock:
             await self.broadcast({"type": "processing", "from": role})
             try:
+                # Yazan kişi seçtiğinden farklı bir dilde yazdıysa dilini düzelt (yankı derdi yok).
+                detected = await ai.detect_language(text)
+                if detected and detected != self.lang_of(role):
+                    await self.set_lang(role, detected)
                 await self._deliver(role, text)
             except Exception as e:
                 log.exception("Metin işlenemedi")

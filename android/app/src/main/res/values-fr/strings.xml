@@ -14,6 +14,7 @@
     <string name="passwords_dont_match">Les mots de passe ne correspondent pas.</string>
     <string name="password_changed">Votre mot de passe a été modifié. Utilisez-le à la prochaine connexion.</string>
     <string name="ok">OK</string>
+    <string name="same_lang_warning">Vous avez choisi la même langue, donc rien n\'est traduit. Si c\'est une erreur, choisissez votre langue ci-dessous. (Elle change aussi automatiquement si vous parlez ou écrivez dans une autre langue.)</string>
     <string name="have_account">Déjà un compte ? Connectez-vous</string>
     <string name="no_account">Nouveau ? Créez un compte</string>
     <string name="server_url">Adresse du serveur</string>

@@ -133,6 +133,17 @@ fun ConversationScreen(session: LiveSession, onClose: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             if (showCode && state.isHost && !state.ended) item { JoinCodeCard(state) }
+            // İki taraf aynı dili seçtiyse çevrilecek bir şey yok: kullanıcıyı uyar, dilini değiştirebilsin.
+            if (state.otherConnected && state.myLang == state.otherLang && !state.ended) {
+                item {
+                    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
+                        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(stringResource(R.string.same_lang_warning))
+                            LanguagePicker(stringResource(R.string.i_speak), state.myLang, vm::setMyLang)
+                        }
+                    }
+                }
+            }
             state.error?.let { code ->
                 item {
                     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)) {

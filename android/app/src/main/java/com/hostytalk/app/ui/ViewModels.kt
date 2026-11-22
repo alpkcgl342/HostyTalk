@@ -273,6 +273,12 @@ class ConversationViewModel(application: Application) : AndroidViewModel(applica
         }
     }
 
+    /** Konuşma sırasında kendi dilini değiştirir (ör. iki taraf da yanlışlıkla aynı dili seçtiyse). */
+    fun setMyLang(code: String) {
+        _state.update { it.copy(myLang = code) }
+        viewModelScope.launch { client.send("set_lang", "lang" to code) }
+    }
+
     fun sendText(text: String) {
         if (text.isBlank()) return
         viewModelScope.launch { client.send("text", "text" to text.trim()) }

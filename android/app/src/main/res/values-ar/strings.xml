@@ -14,6 +14,7 @@
     <string name="passwords_dont_match">كلمتا المرور غير متطابقتين.</string>
     <string name="password_changed">تم تغيير كلمة المرور. استخدمها عند تسجيل الدخول في المرة القادمة.</string>
     <string name="ok">حسناً</string>
+    <string name="same_lang_warning">اخترتما اللغة نفسها، لذلك لا تتم أي ترجمة. إذا كان ذلك خطأ، اختر لغتك أدناه. (تتغير أيضاً تلقائياً عندما تتحدث أو تكتب بلغة أخرى.)</string>
     <string name="have_account">لديك حساب؟ سجّل الدخول</string>
     <string name="no_account">جديد هنا؟ أنشئ حساباً</string>
     <string name="server_url">عنوان الخادم</string>

@@ -67,6 +67,22 @@ async def translate(text: str, src: str, tgt: str) -> str:
     return (r.choices[0].message.content or "").strip()
 
 
+async def detect_language(text: str) -> str | None:
+    """Yazılı mesajın dilini bulur (sesli mesajlarda bunu Whisper yapar). Desteklenmeyen dilde None."""
+    r = await client().chat.completions.create(
+        model=settings.chat_model,
+        temperature=0,
+        max_tokens=5,
+        messages=[
+            {"role": "system", "content": "Identify the language of the user's text. "
+                                          "Reply with only its ISO 639-1 code, e.g. en, tr, ar, fr, ru."},
+            {"role": "user", "content": text},
+        ],
+    )
+    code = languages.normalize(r.choices[0].message.content or "", default="")
+    return code or None
+
+
 async def speak(text: str, lang: str) -> bytes:
     kwargs = {}
     if settings.tts_model.startswith("gpt-"):
