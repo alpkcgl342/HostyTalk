@@ -55,6 +55,10 @@ class MeIn(BaseModel):
     display_name: str = Field(min_length=1, max_length=60)
 
 
+class PasswordIn(BaseModel):
+    new_password: str = Field(min_length=6, max_length=128)
+
+
 class SessionIn(BaseModel):
     lang: str = "tr"
 
@@ -108,7 +112,8 @@ def register(body: RegisterIn):
     if db.get_user_by_email(email):
         raise HTTPException(409, "email_taken")
     uid = db.create_user(email, auth.hash_password(body.password), body.display_name.strip())
-    return {"token": auth.create_token(uid), "user": user_out(db.get_user(uid))}
+    u = db.get_user(uid)
+    return {"token": auth.create_token(u), "user": user_out(u)}
 
 
 @app.post("/api/auth/login")
@@ -116,7 +121,7 @@ def login(body: LoginIn):
     u = db.get_user_by_email(body.email.lower())
     if u is None or not auth.verify_password(body.password, u["password_hash"]):
         raise HTTPException(401, "invalid_credentials")
-    return {"token": auth.create_token(u["id"]), "user": user_out(u)}
+    return {"token": auth.create_token(u), "user": user_out(u)}
 
 
 @app.get("/api/me")
@@ -128,6 +133,14 @@ def me(u=Depends(auth.current_user)):
 def update_me(body: MeIn, u=Depends(auth.current_user)):
     db.update_display_name(u["id"], body.display_name.strip())
     return user_out(db.get_user(u["id"]))
+
+
+@app.post("/api/me/password")
+def change_password(body: PasswordIn, u=Depends(auth.current_user)):
+    """Giriş yapılı oturumdan şifreyi değiştirir. Eski şifre sorulmaz (unutulmuş olabilir);
+    bunun yerine diğer tüm oturumlar kapanır ve bu cihaza yeni bir token verilir."""
+    db.update_password(u["id"], auth.hash_password(body.new_password))
+    return {"token": auth.create_token(db.get_user(u["id"]))}
 
 
 # --- oturum: başlat / katıl -------------------------------------------------
@@ -252,8 +265,8 @@ async def conversation_ws(ws: WebSocket, session_id: str, role: str, token: str 
         await reject(ws, 4400)
         return
     # İki taraf da hesabıyla bağlanır; katılımcı önce /api/sessions/join ile yerini almış olmalı.
-    user_id = auth.user_id_from_token(token or "")
-    if user_id is None or user_id != s.user_of(role):
+    user = auth.user_from_token(token or "")
+    if user is None or user["id"] != s.user_of(role):
         await reject(ws, 4401)
         return
 

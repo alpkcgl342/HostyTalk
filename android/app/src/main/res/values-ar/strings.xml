@@ -7,6 +7,13 @@
     <string name="password">كلمة المرور (6 أحرف على الأقل)</string>
     <string name="display_name">اسمك</string>
     <string name="display_name_hint">يرى الطرف الآخر هذا الاسم.</string>
+    <string name="change_password">تغيير كلمة المرور</string>
+    <string name="change_password_hint">ستبقى مسجّلاً على هذا الجهاز، وسيتم تسجيل خروجك من الأجهزة الأخرى.</string>
+    <string name="new_password">كلمة المرور الجديدة (6 أحرف على الأقل)</string>
+    <string name="repeat_password">أعد إدخال كلمة المرور الجديدة</string>
+    <string name="passwords_dont_match">كلمتا المرور غير متطابقتين.</string>
+    <string name="password_changed">تم تغيير كلمة المرور. استخدمها عند تسجيل الدخول في المرة القادمة.</string>
+    <string name="ok">حسناً</string>
     <string name="have_account">لديك حساب؟ سجّل الدخول</string>
     <string name="no_account">جديد هنا؟ أنشئ حساباً</string>
     <string name="server_url">عنوان الخادم</string>

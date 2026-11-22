@@ -26,25 +26,29 @@ def verify_password(password: str, stored: str) -> bool:
     return hmac.compare_digest(digest.hex(), digest_hex)
 
 
-def create_token(user_id: int) -> str:
-    payload = {"sub": str(user_id), "exp": int(time.time()) + _TOKEN_TTL_SECONDS}
+def create_token(user) -> str:
+    # "ver": şifre değişince artar; eski token'lar (başka cihazlardaki oturumlar) geçersiz olur.
+    payload = {"sub": str(user["id"]), "ver": user["token_version"], "exp": int(time.time()) + _TOKEN_TTL_SECONDS}
     return jwt.encode(payload, settings.jwt_secret, algorithm="HS256")
 
 
-def user_id_from_token(token: str) -> int | None:
+def user_from_token(token: str):
     try:
         payload = jwt.decode(token, settings.jwt_secret, algorithms=["HS256"])
-        return int(payload["sub"])
+        user = db.get_user(int(payload["sub"]))
     except (jwt.PyJWTError, KeyError, ValueError):
         return None
+    # "ver" olmayan token'lar bu özellikten önce verildi; sürüm 0 sayılır.
+    if user is None or payload.get("ver", 0) != user["token_version"]:
+        return None
+    return user
 
 
 _bearer = HTTPBearer(auto_error=False)
 
 
 def current_user(creds: HTTPAuthorizationCredentials | None = Depends(_bearer)):
-    user_id = user_id_from_token(creds.credentials) if creds else None
-    user = db.get_user(user_id) if user_id else None
+    user = user_from_token(creds.credentials) if creds else None
     if user is None:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "invalid_token")
     return user

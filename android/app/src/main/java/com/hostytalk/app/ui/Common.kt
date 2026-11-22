@@ -1,5 +1,6 @@
 package com.hostytalk.app.ui
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -27,6 +28,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
 import com.hostytalk.app.R
@@ -112,6 +114,73 @@ fun ServerUrlDialog(current: String, onSave: (String) -> Unit, onDismiss: () -> 
         },
         confirmButton = { TextButton(onClick = { onSave(value); onDismiss() }) { Text(stringResource(R.string.save)) } },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
+    )
+}
+
+/** Giriş yapılıyken yeni şifre belirleme penceresi (eski şifre sorulmaz). */
+@Composable
+fun ChangePasswordDialog(
+    onSubmit: (password: String, onDone: (error: String?) -> Unit) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var password by remember { mutableStateOf("") }
+    var repeat by remember { mutableStateOf("") }
+    var saving by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+    var done by remember { mutableStateOf(false) }
+    val mismatch = repeat.isNotEmpty() && repeat != password
+
+    AlertDialog(
+        onDismissRequest = { if (!saving) onDismiss() },
+        title = { Text(stringResource(R.string.change_password)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (done) {
+                    Text(stringResource(R.string.password_changed))
+                } else {
+                    Text(stringResource(R.string.change_password_hint), style = MaterialTheme.typography.bodySmall)
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        label = { Text(stringResource(R.string.new_password)) },
+                        singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    )
+                    OutlinedTextField(
+                        value = repeat,
+                        onValueChange = { repeat = it },
+                        label = { Text(stringResource(R.string.repeat_password)) },
+                        singleLine = true,
+                        isError = mismatch,
+                        supportingText = { if (mismatch) Text(stringResource(R.string.passwords_dont_match)) },
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    )
+                    error?.let { Text(errorText(it), color = MaterialTheme.colorScheme.error) }
+                }
+            }
+        },
+        confirmButton = {
+            if (done) {
+                TextButton(onClick = onDismiss) { Text(stringResource(R.string.ok)) }
+            } else {
+                TextButton(
+                    onClick = {
+                        saving = true
+                        error = null
+                        onSubmit(password) { e ->
+                            saving = false
+                            if (e == null) done = true else error = e
+                        }
+                    },
+                    enabled = !saving && password.length >= 6 && password == repeat,
+                ) { Text(stringResource(R.string.save)) }
+            }
+        },
+        dismissButton = {
+            if (!done) TextButton(onClick = onDismiss, enabled = !saving) { Text(stringResource(R.string.cancel)) }
+        },
     )
 }
 

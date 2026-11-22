@@ -7,6 +7,13 @@
     <string name="password">Şifre (en az 6 karakter)</string>
     <string name="display_name">Adınız</string>
     <string name="display_name_hint">Karşınızdaki kişi bu adı görür.</string>
+    <string name="change_password">Şifre değiştir</string>
+    <string name="change_password_hint">Bu cihazda oturumunuz açık kalır; diğer cihazlardaki oturumlar kapanır.</string>
+    <string name="new_password">Yeni şifre (en az 6 karakter)</string>
+    <string name="repeat_password">Yeni şifreyi tekrar girin</string>
+    <string name="passwords_dont_match">Şifreler aynı değil.</string>
+    <string name="password_changed">Şifreniz değiştirildi. Bir sonraki girişte yeni şifrenizi kullanın.</string>
+    <string name="ok">Tamam</string>
     <string name="have_account">Hesabınız var mı? Giriş yapın</string>
     <string name="no_account">Yeni misiniz? Hesap oluşturun</string>
     <string name="server_url">Sunucu adresi</string>

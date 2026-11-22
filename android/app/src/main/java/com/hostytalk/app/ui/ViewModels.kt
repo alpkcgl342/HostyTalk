@@ -127,6 +127,13 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     fun setServerUrl(url: String) = viewModelScope.launch { prefs.setServerUrl(url); refresh() }
     fun clearError() = _state.update { it.copy(error = null) }
 
+    /** Yeni şifreyi kaydeder; dönen yeni token saklanır ki bu cihazda oturum açık kalsın. */
+    fun changePassword(newPassword: String, onDone: (error: String?) -> Unit) = viewModelScope.launch {
+        runCatching { api.changePassword(newPassword) }
+            .onSuccess { token -> prefs.setToken(token); onDone(null) }
+            .onFailure { e -> onDone(e.code()) }
+    }
+
     /** Yeni konuşma başlatır: ekranda kod ve QR çıkar. */
     fun start(onReady: (LiveSession) -> Unit) = openSession(onReady) { api.startSession(myLang.value) }
 

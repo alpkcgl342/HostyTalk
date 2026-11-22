@@ -7,6 +7,13 @@
     <string name="password">Пароль (не менее 6 символов)</string>
     <string name="display_name">Ваше имя</string>
     <string name="display_name_hint">Собеседник увидит это имя.</string>
+    <string name="change_password">Сменить пароль</string>
+    <string name="change_password_hint">На этом устройстве вы останетесь в аккаунте, на других — выйдете.</string>
+    <string name="new_password">Новый пароль (не менее 6 символов)</string>
+    <string name="repeat_password">Повторите новый пароль</string>
+    <string name="passwords_dont_match">Пароли не совпадают.</string>
+    <string name="password_changed">Пароль изменён. Используйте его при следующем входе.</string>
+    <string name="ok">ОК</string>
     <string name="have_account">Уже есть аккаунт? Войдите</string>
     <string name="no_account">Впервые здесь? Создайте аккаунт</string>
     <string name="server_url">Адрес сервера</string>

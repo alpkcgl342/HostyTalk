@@ -87,6 +87,36 @@ def test_auth_flow(client):
     assert client.get("/api/me").status_code == 401
 
 
+def test_change_password(client):
+    old_token = register(client, "pw@example.com", "Can")
+    other_device = client.post("/api/auth/login", json={"email": "pw@example.com", "password": "secret12"}).json()["token"]
+
+    assert client.post("/api/me/password", json={"new_password": "short"}, headers=auth(old_token)).status_code == 422
+    assert client.post("/api/me/password", json={"new_password": "yenisifre9"}).status_code == 401
+    r = client.post("/api/me/password", json={"new_password": "yenisifre9"}, headers=auth(old_token))
+    assert r.status_code == 200
+    new_token = r.json()["token"]
+
+    # Yeni şifre çalışır, eskisi çalışmaz
+    assert client.post("/api/auth/login", json={"email": "pw@example.com", "password": "yenisifre9"}).status_code == 200
+    assert client.post("/api/auth/login", json={"email": "pw@example.com", "password": "secret12"}).status_code == 401
+    # Bu cihaz yeni token'la devam eder; diğer cihazlardaki eski oturumlar kapanır
+    assert client.get("/api/me", headers=auth(new_token)).status_code == 200
+    assert client.get("/api/me", headers=auth(old_token)).status_code == 401
+    assert client.get("/api/me", headers=auth(other_device)).status_code == 401
+
+
+def test_token_issued_before_versioning_still_works(client):
+    """Bu özellikten önce verilmiş ("ver" alanı olmayan) token'lar geçerli kalır."""
+    import jwt
+    import time
+    from app.config import settings
+    register(client, "legacy@example.com", "Eski")
+    uid = db.get_user_by_email("legacy@example.com")["id"]
+    legacy = jwt.encode({"sub": str(uid), "exp": int(time.time()) + 60}, settings.jwt_secret, algorithm="HS256")
+    assert client.get("/api/me", headers=auth(legacy)).status_code == 200
+
+
 def test_both_sides_need_accounts(client):
     host = register(client, "h1@example.com", "Ali")
     s = client.post("/api/sessions", json={"lang": "tr"}, headers=auth(host)).json()

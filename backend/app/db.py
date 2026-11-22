@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash TEXT NOT NULL,
     display_name  TEXT NOT NULL,
     plan          TEXT NOT NULL DEFAULT 'trial',
+    token_version INTEGER NOT NULL DEFAULT 0,
     created_at    INTEGER NOT NULL
 );
 CREATE TABLE IF NOT EXISTS usage (
@@ -89,6 +90,9 @@ def init_db() -> None:
         c.execute("PRAGMA foreign_keys = OFF")
         _migrate_from_merchant_schema(c)
         c.executescript(SCHEMA)
+        cols = {r["name"] for r in c.execute("PRAGMA table_info(users)")}
+        if "token_version" not in cols:
+            c.execute("ALTER TABLE users ADD COLUMN token_version INTEGER NOT NULL DEFAULT 0")
         c.execute("PRAGMA foreign_keys = ON")
 
 
@@ -116,6 +120,15 @@ def get_user(user_id: int) -> sqlite3.Row | None:
 def update_display_name(user_id: int, display_name: str) -> None:
     with connect() as c:
         c.execute("UPDATE users SET display_name = ? WHERE id = ?", (display_name, user_id))
+
+
+def update_password(user_id: int, password_hash: str) -> None:
+    """Şifreyi değiştirir ve token sürümünü artırır: diğer cihazlardaki oturumlar kapanır."""
+    with connect() as c:
+        c.execute(
+            "UPDATE users SET password_hash = ?, token_version = token_version + 1 WHERE id = ?",
+            (password_hash, user_id),
+        )
 
 
 # --- kullanım kotası ------------------------------------------------------------

@@ -88,6 +88,12 @@ private data class RegisterBody(
 private data class LoginBody(val email: String, val password: String)
 
 @Serializable
+private data class PasswordBody(@SerialName("new_password") val newPassword: String)
+
+@Serializable
+private data class TokenResponse(val token: String)
+
+@Serializable
 private data class StartBody(val lang: String)
 
 @Serializable
@@ -132,6 +138,14 @@ class Api(private val prefs: Prefs) {
         }.parse()
 
     suspend fun me(): User = http.get("${base()}/api/me") { bearerAuth(token()) }.parse()
+
+    /** Şifreyi değiştirir; sunucu diğer oturumları kapatır ve bu cihaz için yeni token döner. */
+    suspend fun changePassword(newPassword: String): String =
+        http.post("${base()}/api/me/password") {
+            bearerAuth(token())
+            contentType(ContentType.Application.Json)
+            setBody(PasswordBody(newPassword))
+        }.parse<TokenResponse>().token
 
     // --- canlı konuşma ---
 

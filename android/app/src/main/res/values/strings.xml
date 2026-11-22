@@ -8,6 +8,13 @@
     <string name="password">Password (min. 6 characters)</string>
     <string name="display_name">Your name</string>
     <string name="display_name_hint">The other person sees this name.</string>
+    <string name="change_password">Change password</string>
+    <string name="change_password_hint">You stay signed in on this device; other devices will be signed out.</string>
+    <string name="new_password">New password (min. 6 characters)</string>
+    <string name="repeat_password">Repeat new password</string>
+    <string name="passwords_dont_match">Passwords don\'t match.</string>
+    <string name="password_changed">Your password has been changed. Use it next time you sign in.</string>
+    <string name="ok">OK</string>
     <string name="have_account">Already have an account? Sign in</string>
     <string name="no_account">New here? Create an account</string>
     <string name="server_url">Server address</string>

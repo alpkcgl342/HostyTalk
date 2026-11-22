@@ -46,6 +46,7 @@ fun HomeScreen(
     val serverUrl by vm.serverUrl.collectAsStateWithLifecycle()
     var serverDialog by rememberSaveable { mutableStateOf(false) }
     var joinDialog by rememberSaveable { mutableStateOf(false) }
+    var passwordDialog by rememberSaveable { mutableStateOf(false) }
 
     Scaffold { padding ->
         Column(
@@ -104,9 +105,12 @@ fun HomeScreen(
 
             Spacer(Modifier.height(8.dp))
             AppLanguagePicker()
+            TextButton(onClick = { passwordDialog = true }) { Text("🔒 ${stringResource(R.string.change_password)}") }
             TextButton(onClick = { serverDialog = true }) { Text("⚙ ${stringResource(R.string.server_url)}") }
         }
     }
+
+    if (passwordDialog) ChangePasswordDialog(onSubmit = { pw, onDone -> vm.changePassword(pw, onDone) }) { passwordDialog = false }
 
     if (serverDialog) ServerUrlDialog(serverUrl, vm::setServerUrl) { serverDialog = false }
     if (joinDialog) JoinDialog(onJoin = { vm.join(it, onOpen) }) { joinDialog = false }

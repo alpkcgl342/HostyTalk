@@ -7,6 +7,13 @@
     <string name="password">Mot de passe (6 caractères min.)</string>
     <string name="display_name">Votre nom</string>
     <string name="display_name_hint">L\'autre personne voit ce nom.</string>
+    <string name="change_password">Changer le mot de passe</string>
+    <string name="change_password_hint">Vous restez connecté sur cet appareil ; les autres appareils seront déconnectés.</string>
+    <string name="new_password">Nouveau mot de passe (6 caractères min.)</string>
+    <string name="repeat_password">Répétez le nouveau mot de passe</string>
+    <string name="passwords_dont_match">Les mots de passe ne correspondent pas.</string>
+    <string name="password_changed">Votre mot de passe a été modifié. Utilisez-le à la prochaine connexion.</string>
+    <string name="ok">OK</string>
     <string name="have_account">Déjà un compte ? Connectez-vous</string>
     <string name="no_account">Nouveau ? Créez un compte</string>
     <string name="server_url">Adresse du serveur</string>
